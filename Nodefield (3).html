@@ -1,0 +1,799 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nodefield</title>
+<style>
+:root{--bg:#e8eef0;--ink:#1c2a33;--grid:#d5dee2;--panel:rgba(255,255,255,.88);--line:#b4c3ca;--on:#1c2a33;--onink:#e8eef0;--acc:#2aa198;color-scheme:light dark;--sh:0 4px 16px rgba(20,40,50,.16);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a21;--ink:#dbe6ea;--grid:#18252e;--panel:rgba(22,34,42,.88);--line:#2c4350;--on:#dbe6ea;--onink:#101a21;--sh:0 4px 16px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#101a21;--ink:#dbe6ea;--grid:#18252e;--panel:rgba(22,34,42,.88);--line:#2c4350;--on:#dbe6ea;--onink:#101a21;--sh:0 4px 16px rgba(0,0,0,.4)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:13px/1.35 "Trebuchet MS",Verdana,sans-serif;overflow:hidden}
+#app{position:relative;height:100%}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud,.bar,.ov{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;box-shadow:var(--sh);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hud{top:8px;left:8px;max-width:calc(100% - 270px)}
+#res{display:flex;flex-wrap:wrap;gap:4px}
+#res span{background:rgba(127,150,160,.16);border-radius:99px;padding:1px 8px 1px 5px;font-variant-numeric:tabular-nums}
+i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#st{margin:5px 0 1px;font-weight:bold}
+#msg{min-height:1.3em;color:var(--acc)}
+.bar{bottom:8px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px)}
+#tabs{display:flex;gap:4px;justify-content:center}
+#mods{display:flex;gap:6px;margin-top:6px;overflow-x:auto;padding-bottom:2px}
+button{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 9px;cursor:pointer;transition:background .12s,border-color .12s}
+button:hover{border-color:var(--acc);background:rgba(42,161,152,.12)}
+#tabs button{border-bottom:3px solid var(--tc)}
+#mods button{flex:0 0 auto;text-align:left;border-top:3px solid var(--tc)}
+button.no{opacity:.45}
+button small{display:block;opacity:.75;font-size:11px}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.on{background:var(--on);color:var(--onink)}
+#spd{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+#spd button{font-weight:bold;background:var(--panel);box-shadow:var(--sh);min-width:34px}
+.ov{top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;padding:24px 32px;display:none;max-height:90%;overflow:auto}
+.ov h2{margin:0 0 6px;font-size:26px;letter-spacing:.5px}
+.ov button{padding:7px 14px;margin:3px}
+.ov label{display:block;margin:4px 0}.ov input[type=range]{vertical-align:middle}
+#edp div{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:2px 0}#edp input[type=text]{width:90px}
+#modes{left:auto;right:8px;top:50px;padding:6px 10px}#modes div{display:flex;align-items:center;gap:6px;margin:2px 0}#modes button{padding:0 8px}
+select,input[type=number],input[type=text]{font:inherit;color:var(--ink);background-color:rgba(127,150,160,.14);border:1px solid var(--line);border-radius:8px;padding:5px 10px;outline:0}
+select{-webkit-appearance:none;appearance:none;padding-right:28px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238aa0ab' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+select:hover,select:focus-visible,input:focus-visible{border-color:var(--acc)}
+select option{background:var(--bg);color:var(--ink)}
+input[type=range]{accent-color:var(--acc)}
+summary{cursor:pointer;margin:8px 0}
+#skm{min-width:min(380px,90vw);text-align:left}#skm h2,#skm p{text-align:center}
+#skm label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}
+#menu{top:0;left:0;right:0;bottom:0;transform:none;max-height:none;border:0;border-radius:0;padding:0;overflow:hidden;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;background:none}
+#mbg{position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,rgba(42,161,152,.2),transparent 60%),var(--bg)}
+#mb{position:absolute;inset:0;width:100%;height:100%}
+#mw{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;width:max-content;max-width:92%}
+#mw h2{font-size:clamp(36px,9vw,68px);letter-spacing:5px;margin:0 0 4px}
+#mw p{margin:10px 0}#mw p:first-of-type{opacity:.7;letter-spacing:1px}
+#mw button{padding:11px 22px;font-size:15px;min-width:130px;background:var(--panel);box-shadow:var(--sh)}
+#mw #cp{background:var(--on);color:var(--onink)}
+.em{display:inline-block;line-height:1;margin-right:4px;vertical-align:-2px}
+#hub label{display:flex;gap:10px;justify-content:center;align-items:center;margin:10px 0}
+#rme{width:min(520px,92vw);text-align:left}#rme h2,#rme p{text-align:center}
+#rme label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0}
+.tr{display:flex;gap:6px;justify-content:center;margin:8px 0}
+.ri{display:flex;align-items:center;gap:8px;margin:4px 0}.ri button:first-of-type{margin-left:auto}
+#mmw{position:absolute;right:8px;top:182px;padding:4px;border-radius:12px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--sh)}
+#mm{display:block;width:150px;height:150px;border-radius:8px;cursor:crosshair}#mh{position:absolute;top:6px;right:6px;padding:0 6px}
+#pm,#keys,#set{min-width:min(340px,92vw)}#pm button{display:block;width:100%;margin:6px 0}
+#set label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0}
+.kt{border-collapse:collapse;width:100%;text-align:left}.kt td{padding:3px 8px;border-bottom:1px solid var(--line);vertical-align:top}.kt td:first-child{font-weight:bold;white-space:nowrap}
+#keys{text-align:left}#keys h2,#set h2,#pm h2{text-align:center}
+#help{width:min(800px,94vw);height:min(580px,88vh);overflow:hidden;text-align:left;padding:14px}
+#hbody{display:flex;gap:12px;height:calc(100% - 82px);margin-top:8px}#hs{flex:0 0 190px;overflow:auto;display:flex;flex-direction:column;gap:2px}#ha{flex:1;overflow:auto;padding-right:6px}
+#hq{width:calc(100% - 80px);box-sizing:border-box}.hi{text-align:left;border:0}.hc{font-weight:bold;opacity:.6;margin:8px 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+#ha h3{margin:0 0 6px}#ha p,#ha li{margin:5px 0}
+@media (max-width:620px){#hs{flex-basis:110px}}
+@media (max-width:620px){.hud{font-size:12px;max-width:calc(100% - 130px)}#modes{top:auto;bottom:132px}#spd{flex-wrap:wrap;max-width:118px;justify-content:flex-end}#mmw{top:auto;bottom:132px;right:auto;left:8px}}
+</style></head><body><div id="app">
+<canvas id="c"></canvas>
+<div class="hud"><div id="res"></div><div id="st"></div><div id="msg"></div></div>
+<div id="spd"><button id="bm" title="Menu (Esc)">☰</button><button id="bs" title="Settings">⚙</button><button id="bq" title="Help (F1)">?</button><button id="pz" title="Pause (P)">⏸</button><button id="sp" title="Game speed (Space)">×1</button></div>
+<div class="hud" id="modes"></div>
+<div class="bar"><div id="tabs"></div><div id="mods"></div></div>
+<div id="mmw"><canvas id="mm" width="150" height="150"></canvas><button id="mh" title="Center on core (H)">⌂</button></div><div id="mbg" style="display:none"><canvas id="mb"></canvas></div><div class="ov" id="ov"><h2 id="ot">Core destroyed</h2><div id="sc"></div><p><button id="nx">Next level</button> <button id="rs">Restart</button> <button id="mn2">Menu</button></p></div>
+<div class="ov" id="menu" style="display:block"><div id="mw"><h2>Nodefield</h2><p>Economy, defense and strategy game on an infinite map.</p><p style="margin:-6px 0 10px;font-size:11px;opacity:.6;letter-spacing:.5px">(Inspired by Achikaps)</p><p><button id="cp">Campaign</button> <button id="sb">Sandbox</button> <button id="bsk">Skirmish</button></p><p><button id="bld">Continue saved game</button> <button id="bed">Map editor</button></p><p><button id="brm">Resource &amp; Monument editor</button></p><p><button id="bset">Settings</button> <button id="bhelp">Help</button> <button id="bkeys">Keybinds</button></p></div></div>
+<div class="ov" id="skm"></div><div class="ov" id="hub"><h2>Map Editor</h2><p>Make custom maps, infinite or limited in size</p><label>Saved maps <select id="ml"></select></label><p><button id="hnew">New map</button><button id="hed">Edit</button><button id="hpl">Play</button><button id="hdel">Delete</button></p><p id="hm"></p><p><button id="hbk">Back</button></p></div><div class="ov" id="rme"></div><div class="ov" id="pm"></div><div class="ov" id="set"></div><div class="ov" id="keys"></div><div class="ov" id="help"></div>
+<div class="bar" id="edp" style="display:none"></div>
+</div>
+<script>
+const $=i=>document.getElementById(i),cv=$('c'),g=cv.getContext('2d');
+let W,H,dpr;
+function rs(){dpr=devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr}
+addEventListener('resize',rs);rs();
+let SEED=Math.random()*1000;const CS=240,LR=110;
+const hh=(a,b,c)=>{const x=Math.sin(a*127.1+b*311.7+c*74.7+SEED)*43758.5453;return x-Math.floor(x)};
+const RES={metal:'#8d9ba5',pearl:'#b9a8e8',meat:'#c75b5b',bone:'#cfc59f',food:'#8cbf5c',gum:'#e08fbf',gear:'#a8905c',pill:'#5cb8d6',bomb:'#555',ammo:'#e0b040',battery:'#58c46b',junk:'#7a6a55',drone:'#4aa3ff',coin:'#d4af37',candy:'#ff8fb8',snack:'#f0a35e'};
+const KC=['#6f8a99','#c9a227','#2aa198'],KN=['Infrastructure','Production','Auxiliary'],MD=[['Transport','#4aa3ff'],['Production','#58c46b'],['Construction','#e8913a'],['Defense','#d64545']];
+// k tab, c cost, i inputs/cycle, o outputs/cycle, t cycle seconds, pw needs power
+const M={
+core:{n:'Core',k:9,r:15,hp:300},
+platform:{n:'Platform',k:0,c:{metal:2,pearl:2},r:8},
+road:{n:'Road',k:0,c:{metal:1},r:5},
+fast:{n:'Fast road',k:0,c:{gum:1,metal:1}},
+power:{n:'Power Station',k:0,c:{metal:3,pearl:2}},
+windmill:{n:'Windmill',k:0,c:{metal:6,pearl:1},t:20,o:{battery:1},dir:1},
+altar:{n:'Altar',k:0,c:{meat:3,bone:1},t:30,i:{meat:1},fx:'altar'},
+cargo:{n:'Cargo Station',k:0,c:{metal:5,food:3}},
+biobait:{n:'Biobait',k:0,c:{pill:3,gear:1,metal:2}},
+motivator:{n:'Motivator',k:0,c:{food:1,meat:1,metal:5}},
+factory:{n:'Factory',k:1,c:{metal:4,pearl:2},pw:1,t:8,o:{pearl:2,junk:1}},
+mine:{n:'Mine',k:1,c:{metal:5},pw:1,dep:1,t:3.5,o:{metal:1}},
+farm:{n:'Farm',k:1,c:{pearl:1,metal:3},pw:1,t:6,o:{meat:1}},
+grinder:{n:'Meat Grinder',k:1,c:{meat:3,metal:6},pw:1,t:7,i:{meat:2,metal:1},o:{food:2}},
+lab:{n:'Laboratory',k:1,c:{metal:1,food:1},pw:1,t:8,i:{food:1,pearl:1},o:{gum:1}},
+bombw:{n:'Bomb Workshop',k:1,c:{metal:6,bone:1},pw:1,t:12,i:{metal:2,bone:1},o:{bomb:1}},
+drone:{n:'Drone Assembler',k:1,c:{metal:4,gum:2},pw:1,t:14,i:{metal:2,gum:1},o:{drone:1}},
+smelter:{n:'Smeltery',k:1,c:{bone:1,gum:2,metal:5},pw:1,t:10,i:{metal:2,bone:1},o:{gear:1}},
+palace:{n:'Palace',k:1,c:{gum:6,metal:2},t:40,i:{gum:1},fx:'pal'},
+house:{n:'House',k:2,c:{pearl:5,metal:1},t:25,i:{food:1},o:{},fx:'house'},
+junkyard:{n:'Junkyard',k:2,c:{pearl:2,metal:5}},
+turret:{n:'Turret',k:2,c:{pearl:1,metal:3},i:{ammo:2},fx:'turret',rg:150},
+laser:{n:'Laser',k:2,c:{gum:3,metal:4},pw:1,fx:'laser',rg:130},
+ammo:{n:'Ammunition',k:2,c:{metal:4,pearl:4},pw:1,t:5,i:{metal:1},o:{ammo:3}},
+biorx:{n:'Bioreactor',k:2,c:{gum:9},t:20,o:{meat:2,bone:1},fx:'bio'},
+garb:{n:'Garbage Factory',k:2,c:{gear:5,bone:2},t:9,i:{junk:2},o:{gear:1}},
+sci:{n:'Science Center',k:2,c:{gear:3,metal:2},pw:1},
+airport:{n:'Airport',k:2,c:{metal:2,gum:3,bone:2},i:{bomb:1},fx:'air'},
+recycler:{n:'Recycler',k:1,c:{metal:4,pearl:2},pw:1,t:6,i:{junk:2},o:{metal:1}},
+mint:{n:'Minting Factory',k:1,c:{metal:5,pearl:2},pw:1,t:9,i:{metal:2,pearl:1},o:{coin:1}},
+pacifier:{n:'Pacifier',k:2,c:{pill:2,metal:3},t:20,i:{pill:1},o:{},fx:'pac'},
+transmitter:{n:'Transmitter',k:0,c:{metal:4,gum:2},fx:'tx'},
+eatery:{n:'Eatery',k:2,c:{metal:4,food:2},t:12,i:{food:1},o:{snack:1}},
+cottage:{n:'Cottage',k:2,c:{pearl:3,metal:1},t:20,i:{snack:1},o:{},fx:'house'},
+deprob:{n:'Deproblemator',k:2,c:{gear:4,bomb:2,metal:4},fx:'dep',rg:260},
+softener:{n:'Softener',k:2,c:{metal:4,pearl:2},t:20,i:{candy:1},o:{},fx:'soft'},
+repair:{n:'Repair Hub',k:2,c:{metal:5,gear:2},pw:1,fx:'rep',rg:100},
+wall:{n:'Wall',k:2,c:{metal:2},r:7,hp:220},
+stock:{n:'Stockpiler',k:0,c:{metal:6,pearl:2},r:9,fx:'stock'},
+clock:{n:'Logic Clock',k:2,c:{gear:2,metal:3},r:9,fx:'clock'},
+belt:{n:'Conveyor',k:0,c:{metal:1}},
+emine:{n:'Electric Miner',k:1,c:{metal:10,pearl:10},pw:1,dep:1,t:1.8,o:{metal:1}},
+efactory:{n:'Electric Factory',k:1,c:{pearl:20},pw:1,t:4,o:{pearl:2,junk:1}}};
+const RI={},SP={circle:null,square:[[-.8,-.8],[.8,-.8],[.8,.8],[-.8,.8]],diamond:[[0,-1],[1,0],[0,1],[-1,0]],triangle:[[0,-1],[1,.8],[-1,.8]],hexagon:[0,1,2,3,4,5].map(i=>[Math.cos(i*1.0472),Math.sin(i*1.0472)]),star:[...Array(10)].map((_,i)=>{const a=i*.6283-1.5708,r=i%2?.45:1;return[Math.cos(a)*r,Math.sin(a)*r]}),cross:[[-.3,-1],[.3,-1],[.3,-.3],[1,-.3],[1,.3],[.3,.3],[.3,1],[-.3,1],[-.3,.3],[-1,.3],[-1,-.3],[-.3,-.3]]},
+SZ={inf:null,tiny:[800,800],small:[1400,1000],medium:[2200,1600],large:[3400,2400]},
+limFrom=k=>SZ[k]?{w:SZ[k][0],h:SZ[k][1]}:null,szKey=l=>Object.keys(SZ).find(k=>SZ[k]&&l&&SZ[k][0]==l.w)||'inf',
+cl=(x,y)=>LIM?[Math.max(-LIM.w/2,Math.min(LIM.w/2,x)),Math.max(-LIM.h/2,Math.min(LIM.h/2,y))]:[x,y],
+regRes=r=>{r.name=r.name||r.id;RES[r.id]=r.col;RI[r.id]={shape:r.shape,emoji:r.emoji,disp:r.disp,name:r.name}},
+ricon=(sh,col,em,z=11)=>em?`<span class="em" style="font-size:${z+3}px">${em}</span>`:`<i style="background:${col};width:${z}px;height:${z}px;${SP[sh]?'border-radius:0;clip-path:polygon('+SP[sh].map(p=>(p[0]*50+50)+'% '+(p[1]*50+50)+'%').join(',')+')':''}"></i>`,
+rname=k=>RI[k]&&RI[k].name||k,ri=k=>{const m=RI[k]||{};return ricon(m.shape,RES[k],m.disp=='emoji'&&m.emoji)};
+function rdraw(x,y,r,sh,col,em,line){const X=sx(x),Y=sy(y),R=r*cam.z;if(em){g.font=Math.max(8,R*2)+'px serif';g.fillStyle='#000';g.textAlign='center';g.textBaseline='middle';g.fillText(em,X,Y);return}
+ const p=SP[sh];g.beginPath();if(p)p.forEach((q,i)=>g[i?'lineTo':'moveTo'](X+q[0]*R,Y+q[1]*R));else g.arc(X,Y,R,0,6.283);g.closePath();if(col){g.fillStyle=col;g.fill()}if(line){g.strokeStyle=line;g.stroke()}}
+const rd=(x,y,r,k,line)=>{const m=RI[k]||{};rdraw(x,y,r,m.shape,RES[k],m.disp=='emoji'&&m.emoji,line)};
+const SET={mm:1,loc:1,pan:1,rt:0,su:5,th:'auto'},FB=new Map();let fT=0;
+const FD="Verdant Collective|f|food;Pearl Divers Guild|f|pearl;Copperhill Union|f|metal;Lanternkeepers|f|battery;Mossback Tribe|f|meat;Saltwind Traders|f|gum;Quillfeather Order|f|pill;Brightforge Co-op|f|gear;Hollow Oak Clan|f|bone;Tidecallers|f|pearl;Amber Hive|f|food;Silverbrook League|f|metal;Gearwright Society|f|gear;Honeyvine Farmers|f|food;Starlit Wanderers|f|battery;Riverbend Pact|f|metal;Sunpetal Order|f|pill;Driftwood Nomads|f|gum;Cloudspinner Guild|f|ammo;Ironroot Smiths|f|ammo;Grey Cartographers|n|gum;Ashfall Hermits|n|bone;Mirror Lake Monks|n|pill;Thornwall Syndicate|n|metal;Dustwalkers|n|gear;Obsidian Archive|n|pearl;Rustbelt Collective|n|metal;Pale Orchard|n|food;Lowtide Smugglers|n|ammo;Echo Valley Clan|n|meat;Marrow Merchants|n|bone;Windcutter Tribe|n|battery;Stillwater Order|n|pill;Cobalt Brokers|n|gum;Fenmoor Wardens|n|food;Rotfang Horde|h|meat;Cinder Reavers|h|ammo;Blackbrine Raiders|h|metal;Gnashing Swarm|h|bone;Ironmaw Warband|h|gear;Hollowbone Cult|h|bone;Scrapjaw Gang|h|metal;Ember Locusts|h|food;Venomtongue Clan|h|pill;Sablefang Pack|h|meat;Ashen Legion|h|ammo;Gloomspore Brood|h|food;Razorwind Marauders|h|battery;Tarpit Syndicate|h|gum;Crimson Tide Corsairs|h|pearl";
+const hc=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return`hsl(${h},60%,55%)`},OFF=FD.split(';').map(x=>{const a=x.split('|');return{n:a[0],tr:a[1],g:a[2],col:hc(a[0])}}),TRN={f:'friendly',n:'neutral',h:'hostile'};
+function faction(cx,cy){if(hh(cx,cy,34)<.5)return OFF[Math.floor(hh(cx,cy,35)*OFF.length)];
+ const P=['ka','vo','mi','tor','zen','ur','bel','dra','sol','nix','ar','quo'],Q=['dar','len','vik','mora','thos','bit','gar','lume','pax'],T=['Clan','Union','Order','Pact','Hive','Guild','Tribe','Syndicate','League','Collective'],G=['metal','pearl','food','gum','gear','pill','ammo','battery','bone','meat'],p=hh(cx,cy,36),n=P[Math.floor(hh(cx,cy,37)*P.length)]+Q[Math.floor(hh(cx,cy,38)*Q.length)],nm=n[0].toUpperCase()+n.slice(1)+' '+T[Math.floor(hh(cx,cy,39)*T.length)];
+ return{n:nm,tr:p<.4?'f':p<.75?'n':'h',g:G[Math.floor(hh(cx,cy,40)*G.length)],col:hc(nm),proc:1}}
+function fbase(cx,cy){if(blank)return null;const key='F'+cx+','+cy;if(FB.has(key))return FB.get(key);let b=null;
+ if(Math.hypot(cx,cy)>1.6&&hh(cx,cy,31)<.09){const x=(cx+.2+.6*hh(cx,cy,32))*CS,y=(cy+.2+.6*hh(cx,cy,33))*CS;if(!(LIM&&(Math.abs(x)>LIM.w/2||Math.abs(y)>LIM.h/2)))b={x,y,key,f:faction(cx,cy),st:0,t:0}}
+ FB.set(key,b);return b}
+function hbases(){const o=new Map();for(const n of N.values()){const cx=Math.floor(n.x/CS),cy=Math.floor(n.y/CS);for(let i=-4;i<=4;i++)for(let j=-4;j<=4;j++){const b=fbase(cx+i,cy+j);if(b&&b.f.tr=='h'&&(b.pz||0)<time)o.set(b.key,b)}}return[...o.values()]}
+function facUpdate(dt){if((fT-=dt)>0)return;fT=2;const TX=[...N.values()].some(n=>n.type=='transmitter'&&!n.bp);
+ for(const n of N.values()){if(n.bp)continue;const cx=Math.floor(n.x/CS),cy=Math.floor(n.y/CS);
+  for(let i=-1;i<2;i++)for(let j=-1;j<2;j++){const b=fbase(cx+i,cy+j);if(b&&!b.st&&Math.hypot(b.x-n.x,b.y-n.y)<(n.type=='transmitter'&&b.f.tr!='h'?220:80)){const F=b.f;
+   if(F.tr=='h'){b.st=3;nextWave=Math.min(nextWave,75);flash(F.n+' noticed your expansion and are sending a raid!')}
+   else{b.st=1;b.t=F.tr=='f'?20:50;if(F.tr=='f'){for(let k=0;k<3;k++)spawnWorker();flash(F.n+' welcome you: 3 units joined')}else flash('Contact with '+F.n+': trading begins')}}}}
+ for(const b of FB.values())if(b&&b.st==3&&b.f.tr=='h'&&(b.pz||0)<time){b.sp=(b.sp==null?150:b.sp)-2;if(b.sp<=0&&wave>=3){b.sp=120;const c=1+Math.floor(wave/4);for(let i=0;i<c;i++){const ty=wave>=5&&Math.random()<.3?'minigun':Math.random()<.5?'scout':'raider',hp=EN[ty].hp*(1+wave*.05)*cfg.hm,q=cl(b.x+(Math.random()-.5)*40,b.y+(Math.random()-.5)*40);enemies.push({x:q[0],y:q[1],hp,mh:hp,ty,t:0,tg:null,fc:b.f.col})}flash(b.f.n+' spawned '+c+' invaders')}}
+ for(const b of FB.values()){if(b&&b.st==1&&b.f.tr=='f'){const pc=[...N.values()].some(o=>!o.bp&&o.act>0&&M[o.type].fx=='pac'&&Math.hypot(o.x-b.x,o.y-b.y)<200);b.eu=Math.max(0,Math.min(100,(b.eu||0)+(pc?-4:1)))}}
+ for(const b of FB.values())if(b&&b.st==1&&(b.t-=TX?4:2)<=0){const F=b.f,fr=F.tr=='f';b.t=fr?45:90;if(fr&&(b.eu||0)>=100){const c=Math.round(2+wave*.5);S.candy=(S.candy||0)+c;flash(F.n+' sent '+c+' candy')}else{const q=Math.round((fr?6:3)+wave*(fr?1.5:.8));S[F.g]=(S[F.g]||0)+q;let px='';if(fr){const p=Math.round(1+wave*.3);S.pill=(S.pill||0)+p;px=' and '+p+' pills'}flash(F.n+' sent '+q+' '+rname(F.g)+px)}}}
+function drawBases(){const c0=Math.floor(wx(-80)/CS),c1=Math.floor(wx(W+80)/CS),r0=Math.floor(wy(-80)/CS),r1=Math.floor(wy(H+80)/CS);
+ for(let cx=c0;cx<=c1;cx++)for(let cy=r0;cy<=r1;cy++){const b=fbase(cx,cy);if(!b)continue;const F=b.f;g.globalAlpha=.22;circ(b.x,b.y,32,F.col);g.globalAlpha=1;g.lineWidth=2;
+  rdraw(b.x,b.y,15,F.tr=='f'?'hexagon':F.tr=='n'?'square':'triangle',F.col,0,'#10181d');
+  g.fillStyle='#8a99a3';g.font=Math.max(8,10*cam.z)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(F.n+' ['+TRN[F.tr]+(b.st==1?', linked'+(F.tr=='f'?', euphoria '+Math.round(b.eu||0)+'%':''):'')+']',sx(b.x),sy(b.y)+24*cam.z)}}
+const D=new Map();
+function dep(cx,cy,k){if(blank)return null;const key=cx+','+cy+','+k;if(D.has(key))return D.get(key);let d=null;
+ if(cx==0&&cy==0&&k==0)d={x:120,y:50,amt:300,m:300};
+ else if(k==2){if(hh(cx,cy,19)<.07)d={x:(cx+.2+.6*hh(cx,cy,20))*CS,y:(cy+.2+.6*hh(cx,cy,21))*CS,amt:0,m:1,mon:1}}
+ else if(hh(cx,cy,k*9+1)<.4*cfg.df){const a=150+Math.floor(hh(cx,cy,k*9+4)*250);d={x:(cx+.1+.8*hh(cx,cy,k*9+2))*CS,y:(cy+.1+.8*hh(cx,cy,k*9+3))*CS,amt:a,m:a}}
+ if(d&&LIM&&(Math.abs(d.x)>LIM.w/2||Math.abs(d.y)>LIM.h/2))d=null;if(d)d.key=key;D.set(key,d);return d}
+function near(x,y,r,mon){const cx=Math.floor(x/CS),cy=Math.floor(y/CS);let b=null,bd=r;
+ for(let i=-1;i<2;i++)for(let j=-1;j<2;j++)for(let k=0;k<3;k++){const d=dep(cx+i,cy+j,k);if(d&&!!d.mon==!!mon&&(d.mon?!d.found:d.amt>0)){const e=Math.hypot(d.x-x,d.y-y);if(e<bd){bd=e;b=d}}}for(const d of ED)if(!!d.mon==!!mon&&(d.mon?!d.found:d.amt>0)){const e=Math.hypot(d.x-x,d.y-y);if(e<bd){bd=e;b=d}}return b}
+let N,workers,enemies,fx,S,wave,nextWave,over,idc,time,cam,tool,mouse={x:0,y:0},msgT=0,kills,sp=1,tab=0,score,pwT,fast,hudT=0;
+const CORE=()=>{for(const n of N.values())if(n.type=='core')return n},fk=(a,b)=>Math.min(a,b)+'-'+Math.max(a,b);
+let RS={},DR={i:1};
+const IMP={metal:20,pearl:12,food:8,gum:6},PR={t:-9,b:{}};
+function prRefresh(){if(time>=PR.t&&time-PR.t<1)return;PR.t=time;PR.b={};for(const n of N.values())if(n.bp){const k=M[n.type].c;for(const r in k)if(S[r]<k[r])PR.b[r]=1}if(tool&&M[tool]&&M[tool].c)for(const r in M[tool].c)if(S[r]<M[tool].c[r])PR.b[r]=1}
+const need=r=>Math.max(IMP[r]?Math.max(0,1-(S[r]||0)/IMP[r]):0,PR.b[r]?1:0),
+prio=n=>{const d=dd(n);if(!d.o)return 0;let p=0;for(const r of(d.dep&&n.dep&&n.dep.res?[n.dep.res]:Object.keys(d.o)))p=Math.max(p,need(r));return p},
+free=(n,w)=>!n.bp&&man(M[n.type])&&!(M[n.type].dep&&n.dep&&n.dep.amt<=0)&&!workers.some(o=>o!==w&&o.tgt==n.id&&o.st=='work');const mtn=w=>Math.min(2,[...N.values()].filter(o=>o.type=='motivator'&&!o.bp&&o.md==1&&Math.hypot(o.x-w.x,o.y-w.y)<160).length);
+const TECH={mint:{n:'Currency',d:'Minting Factory',c:{metal:6,pearl:4},u:['mint']},
+diplo:{n:'Diplomacy',d:'Transmitter, Pacifier, Softener',c:{gum:4,pill:2},u:['transmitter','pacifier','softener']},
+cuisine:{n:'Cuisine',d:'Eatery and Cottage',c:{food:4,pearl:4},u:['eatery','cottage']},
+bombs:{n:'Explosives',d:'Bomb Workshop, Airport',c:{metal:6,bone:2},u:['bombw','airport']},
+deprob:{n:'Deproblemation',d:'Deproblemator',c:{gear:4,bomb:2},u:['deprob'],req:'bombs'},
+drones:{n:'Drone Logistics',d:'Drone Assembler, Cargo Station',c:{gum:3,metal:6},u:['drone','cargo']},
+palace:{n:'Palace Doctrine',d:'Palace',c:{gum:5,pearl:4},u:['palace']},
+bio:{n:'Bioengineering',d:'Bioreactor',c:{gum:4,meat:4},u:['biorx']},
+recycle:{n:'Recycling',d:'Garbage Factory, Recycler',c:{metal:5,pearl:4},u:['garb','recycler']},
+prod:{n:'Production I',d:'All production 15% faster',c:{gum:4,gear:3},u:[]},
+hp:{n:'Reinforced Nodes',d:'New nodes have 30% more health',c:{metal:8,gear:2},u:[]},
+range:{n:'Targeting Optics I',d:'Turret and laser range +25%',c:{gum:4,gear:3},u:[]},
+range2:{n:'Targeting Optics II',d:'Turret and laser range +25% more',c:{gum:8,gear:6},u:[],req:'range'},
+burst:{n:'Burst Output I',d:'Batch producers make 1 extra item per batch',c:{gum:8,gear:6},u:[]},
+burst2:{n:'Burst Output II',d:'2 extra items per batch',c:{gum:12,gear:8,pill:3},u:[],req:'burst'},
+burst3:{n:'Burst Output III',d:'3 extra items per batch',c:{gum:20,gear:14,coin:8},u:[],req:'burst2'}},LKM={};
+for(const id in TECH)for(const t of TECH[id].u)LKM[t]=id;
+const SLO=[0,6,3,9,1,7,4,10,2,8,5,11],btz=d=>d.o&&Object.keys(d.o).length&&!d.dir&&!d.fx?3:1,exOf=()=>(RS.burst?1:0)+(RS.burst2?1:0)+(RS.burst3?1:0),ok=t=>gm=='sb'||!LKM[t]||RS[LKM[t]],bmOf=()=>RS.burst3?4:RS.burst2?3:RS.burst?2:1,BST=()=>(1+.25*Math.min(3,[...N.values()].filter(n=>n.on>0).length))*(RS.prod?1.15:1);
+function reset(){regAllTech();RS={};DR={i:1,log:[]};N=new Map();workers=[];enemies=[];fx=[];S={};for(const r in RES)S[r]=0;Object.assign(S,{metal:30,pearl:14,battery:10});
+ wave=0;nextWave=90;warned=0;over=false;idc=0;time=0;kills=0;score=0;pwT=20;fast=new Set();BL.clear();PT.length=0;closeNP();cam={x:60,y:25,z:1};tool=null;D.clear();FB.clear();fT=0;
+ const c=addNode('core',0,0),p=addNode('power',60,0);c.links.push(p.id);p.links.push(c.id);
+ for(let i=0;i<(SET.su||5);i++)spawnWorker(0,-1);flash('All units start unemployed: use the sliders to assign jobs');$('ov').style.display='none';flash('Assign units to Transport, Production or Construction in the Units panel, then build a Mine on the gold ring.');tabs()}
+function addNode(type,x,y){const d=M[type],n={id:++idc,type,x,y,links:[],hp:Math.round((d.hp||80)*(RS.hp?1.3:1)),max:Math.round((d.hp||80)*(RS.hp?1.3:1)),buf:{},out:{},cool:0,t:0,on:0,born:time};N.set(n.id,n);return n}
+const cnt=t=>[...N.values()].filter(n=>n.type==t&&!n.bp).length,man=d=>(d.pw&&d.t)||d.fx=='pal'||d.fx=='turret'||d.fx=='laser';
+function spawnWorker(dr,mode){const c=[...N.values()].find(n=>n.type=='core');if(c)workers.push({x:c.x,y:c.y,at:c.id,p:[],st:'idle',tgt:0,r:'',n:0,dr,mode:dr?0:mode==null?-1:mode,bt:0,hp:30})}
+function check(type,x,y){const d=M[type];let dp=null;
+ if(!ok(type))return{e:'Research needed: '+TECH[LKM[type]].n,x,y};
+ if(type=='cottage'&&![...N.values()].some(n=>n.type=='eatery'&&!n.bp&&Math.hypot(n.x-x,n.y-y)<160))return{e:'Cottages need an Eatery within 160',x,y};
+ if(d.dep){dp=near(x,y,28);if(!dp)return{e:'Mines need a metal deposit',x,y};if([...N.values()].some(n=>n.dep==dp))return{e:'Deposit already used',x,y};x=dp.x;y=dp.y}
+ if(LIM&&(Math.abs(x)>LIM.w/2||Math.abs(y)>LIM.h/2))return{e:'Outside the map',x,y};
+ const ns=[...N.values()].map(n=>({n,d:Math.hypot(n.x-x,n.y-y)})).filter(o=>o.d<=LR).sort((a,b)=>a.d-b.d);
+ if(!ns.length)return{e:'Too far from your network',x,y};
+ if(ns[0].d<26)return{e:'Too close to another node',x,y};
+ const l=Object.keys(d.c).find(r=>S[r]<d.c[r]);if(l)return{e:'Need '+d.c[l]+' '+l,x,y,ns,dp};
+ return{x,y,ns,dp}}
+function place(type,x,y){const r=check(type,x,y);if(r.e)return flash(r.e);
+ const n=addNode(type,r.x,r.y);n.dep=r.dp;n.bp=1;if(!workers.some(w=>w.mode==2))flash('Assign some units to Construction to build this');for(const o of r.ns.slice(0,3)){n.links.push(o.n.id);o.n.links.push(n.id)}
+ const mo=near(n.x,n.y,60,1);if(mo){mo.found=1;const cm=CM[mo.t],u=cm?cm.units:5;for(let i=0;i<u;i++)spawnWorker();if(cm&&cm.res)S[cm.res]=(S[cm.res]||0)+cm.amt;flash((cm?cm.name:'Monument')+' discovered: '+u+' units'+(cm&&cm.res&&cm.amt?' and '+cm.amt+' '+cm.res:'')+' gained')}}
+function kill(n){if(!N.has(n.id))return;if(DR.act&&!n.bp)DR.lost=(DR.lost||0)+1;N.delete(n.id);for(const m of N.values())m.links=m.links.filter(i=>i!=n.id);for(const kv of [...BL])if(kv[1].a==n.id||kv[1].b==n.id)BL.delete(kv[0]);if(!n.bp)spark(n.x,n.y,'#ff9a5a',8);
+ if(n.type=='bombw')for(const o of N.values())if(Math.hypot(o.x-n.x,o.y-n.y)<90)o.hp-=60;
+ if(n.type=='core'){$('ot').textContent='Core destroyed';$('nx').style.display='none';over=true;$('sc').textContent='You survived '+wave+' waves, downed '+kills+' invaders, palace tribute '+score+'.';$('ov').style.display='block'}}
+function flash(m){$('msg').textContent=m;msgT=4}
+function path(a,b){if(a==b)return[];const pv=new Map([[a,0]]),q=[a];
+ for(let i=0;i<q.length;i++){const u=N.get(q[i]);if(!u)continue;for(const v of u.links)if(!pv.has(v)&&N.has(v)){pv.set(v,q[i]);if(v==b){const p=[];let c=b;while(c!=a){p.unshift(c);c=pv.get(c)}return p}q.push(v)}}return null}
+let mot=0;
+function stepWorker(w,dt){
+ if(w.mode==3){let b=null,bd=260;for(const e of enemies){const d=Math.hypot(e.x-w.x,e.y-w.y);if(d<bd){bd=d;b=e}}
+  if(b){const dx=b.x-w.x,dy=b.y-w.y,d=Math.hypot(dx,dy);if(d>12){w.x+=dx/d*95*dt;w.y+=dy/d*95*dt}else{b.hp-=22*dt;w.hp-=10*dt}}else w.hp=Math.min(30,w.hp+2*dt);
+  if(w.hp<=0)w.dead=1;return}
+ if(w.p.length){const n=N.get(w.p[0]);if(!n){w.p=[];w.st='idle';w.n=0;w.at=0;return}const dx=n.x-w.x,dy=n.y-w.y,d=Math.hypot(dx,dy),s=75*(w.dr?1.7:1)*(1+.3*mtn(w))*(fast.has(fk(w.at,n.id))?2:1)*dt;
+  if(d<=s){w.x=n.x;w.y=n.y;w.at=n.id;w.p.shift()}else{w.x+=dx/d*s;w.y+=dy/d*s}return}
+ if(w.st=='idle'){if(w.mode<0)return;if((w.cd=(w.cd||0)-dt)>0)return;w.cd=.2+Math.random()*.1}const c=CORE();if(!c){w.dead=1;return}if(!N.get(w.at)){w.x=c.x;w.y=c.y;w.at=c.id;w.p=[];w.st='idle';w.n=0;w.bag=null;return}
+ const go=(st,to,tgt)=>{const p=path(w.at,to);if(!p){w.st='idle';return false}w.st=st;w.p=p;if(tgt)w.tgt=tgt;return true};
+ if(w.st=='pick'){const m=N.get(w.tgt);w.bag={};let room=8,tot=0;if(m)for(const r of Object.keys(m.out)){const q=Math.min(room,Math.floor(m.out[r]));if(q>=1){w.bag[r]=q;m.out[r]-=q;room-=q;tot+=q;if(tot==q)w.r=r}}w.n=tot;go('deliver',c.id)}
+ else if(w.st=='deliver'&&w.bag){for(const r in w.bag)S[r]=(S[r]||0)+w.bag[r];w.bag=null;w.n=0;w.st='idle'}
+ else if(w.st=='deliver'){S[w.r]=(S[w.r]||0)+w.n;w.n=0;w.st='idle'}
+ else if(w.st=='take'&&w.bag){const t0=N.get(w.tgt);let tot=0;for(const r in w.bag){const q=t0?Math.min(w.bag[r],Math.floor(S[r]||0)):0;S[r]-=q;w.bag[r]=q;tot+=q}w.n=tot;if(!tot){w.bag=null;w.st='idle'}else go('give',w.tgt)}
+ else if(w.st=='take'){const q=Math.min(w.n,Math.floor(S[w.r]));S[w.r]-=q;w.n=q;if(!q||!N.get(w.tgt)){S[w.r]+=q;w.n=0;w.st='idle'}else go('give',w.tgt)}
+ else if(w.st=='give'&&w.bag){const t=N.get(w.tgt);for(const r in w.bag){if(t)t.buf[r]=(t.buf[r]||0)+w.bag[r];else S[r]=(S[r]||0)+w.bag[r]}w.bag=null;w.n=0;w.st='idle'}
+ else if(w.st=='give'){const t=N.get(w.tgt);if(t)t.buf[w.r]=(t.buf[w.r]||0)+w.n;else S[w.r]+=w.n;w.n=0;w.st='idle'}
+ else if(w.st=='work'){const n=N.get(w.tgt);if(!n||w.mode!=1||w.at!=w.tgt)w.st='idle';else if((w.hold=(w.hold||0)+dt)>20){w.hold=0;prRefresh();const cur=prio(n);if(cur<.3){const b=[...N.values()].filter(o=>o!==n&&free(o,w)&&prio(o)>cur+.3).sort((a,b)=>prio(b)-prio(a)).find(o=>path(w.at,o.id));if(b)go('work',b.id,b.id)}}}
+ else if(w.st=='buildgo'){const n=N.get(w.tgt),k=n&&M[n.type].c;if(n&&n.bp&&Object.keys(k).every(r=>S[r]>=k[r])){for(const r in k)S[r]-=k[r];w.st='build';w.bt=0}else w.st='idle'}
+ else if(w.st=='build'){const n=N.get(w.tgt);if(!n||w.mode!=2)w.st='idle';else{n.pg=Math.min(1,(w.bt+=dt)/3);if(Math.random()<dt*12)spark(n.x+(Math.random()-.5)*16,n.y+(Math.random()-.5)*16,'#ffd36b',1);if(w.bt>=3){n.bp=0;n.pg=0;n.pop=.5;w.st='idle';spark(n.x,n.y,'#ffd36b',10);if(n.type=='airport')n.cool=10}}}
+ else if(w.mode==1){prRefresh();const n=[...N.values()].filter(n=>free(n,w)).sort((a,b)=>prio(b)-prio(a)).find(n=>path(w.at,n.id));if(n){w.hold=0;go('work',n.id,n.id)}}
+ else if(w.mode==2){const n=[...N.values()].find(n=>n.bp&&!workers.some(o=>o.tgt==n.id&&(o.st=='buildgo'||o.st=='build'))&&path(w.at,n.id));if(n)go('buildgo',n.id,n.id)}
+ else{const all=[...N.values()];
+  const m=all.find(n=>n.type!='core'&&!OUTB.has(n.id)&&Object.values(n.out).some(v=>v>=1)&&!workers.some(o=>o.st=='pick'&&o.tgt==n.id)&&path(w.at,n.id));
+  if(m){go('pick',m.id,m.id);return}
+  for(const n of all){const d=dd(n);if(!d.i||n.bp)continue;{const B={};let room=8,tot=0;for(const r in d.i){
+   const inb=workers.filter(o=>o.tgt==n.id&&(o.st=='take'||o.st=='give')).reduce((a,o)=>a+(o.bag?o.bag[r]||0:o.r==r?o.n:0),0),need=d.i[r]*2*btz(d)-(n.buf[r]||0)-inb,q=Math.min(need,Math.floor(S[r]),4,room);
+   if(q>=1){B[r]=q;room-=q;tot+=q}}
+  if(tot&&path(w.at,c.id)){w.bag=B;w.r=Object.keys(B)[0];w.n=tot;go('take',c.id,n.id);return}}}}}
+function update(dt){time+=dt;if(auto&&(autoT-=dt)<=0){autoT=2;balance()}if(gm=='cp'&&LV[lvl].ok())return win();const mods=[...N.values()];
+ const st=cnt('power');let cap=S.battery>0?st*5:0;pwT-=dt;if(pwT<=0){pwT=20;S.battery=Math.max(0,S.battery-st)}
+ MOTS=mods.filter(o=>o.type=='motivator'&&!o.bp);mot=Math.min(2,cnt('motivator'));const ops=new Set(workers.filter(w=>w.st=='work'&&!w.p.length).map(w=>w.tgt));const boost=BST(),bm=bmOf(),ex=exOf(),MP=mods.filter(o=>o.type=='motivator'&&!o.bp&&!o.md),MF=mods.filter(o=>o.type=='motivator'&&!o.bp&&o.md==2),clog=25+25*cnt('junkyard');
+ if(S.drone>=1&&cnt('cargo')){S.drone--;spawnWorker(1)}
+ for(const n of mods){const d=dd(n);if(n.bp)continue;n.cool-=dt;if(n.on>0)n.on-=dt;if(n.act>0)n.act-=dt;if(n.pop>0)n.pop-=dt;if(n.q&&n.q.length){for(const it of n.q)it.t-=dt;for(const it of n.q)if(it.t<=0)n.out[it.r]=(n.out[it.r]||0)+1;n.q=n.q.filter(it=>it.t>0)}if(d.pw){n.pwd=cap>0;cap--}
+  if(d.fx=='turret'||d.fx=='laser'){let b=null,bd=d.rg*rgM();for(const e of enemies){const k=Math.hypot(e.x-n.x,e.y-n.y);if(k<bd){bd=k;b=e}}
+   const ck=clockOf(n,mods);if(b&&(ck?ck.cs==1:ops.has(n.id))){if(d.fx=='turret'){if((ck?n.pu!=ck.pulse:n.cool<=0)&&n.buf.ammo>0){b.hp-=16;n.buf.ammo--;if(ck)n.pu=ck.pulse;n.cool=MF.some(o=>Math.hypot(o.x-n.x,o.y-n.y)<160)?.6:.9;fx.push({a:n,b:{x:b.x,y:b.y},t:.12})}}
+    else if(n.pwd){b.hp-=24*dt*(MF.some(o=>Math.hypot(o.x-n.x,o.y-n.y)<160)?1.5:1);fx.push({a:n,b:{x:b.x,y:b.y},t:.04,c:'#e08fbf'})}}}
+  else if(d.fx=='clock'){clockTick(n,dt)}
+  else if(d.fx=='rep'){if(n.pwd)for(const o of mods)if(o.hp<o.max&&Math.hypot(o.x-n.x,o.y-n.y)<d.rg)o.hp=Math.min(o.max,o.hp+4*dt)}
+  else if(d.fx=='dep'){let b=null;for(const e of enemies)if(EN[e.ty].hp>=100&&Math.hypot(e.x-n.x,e.y-n.y)<d.rg&&(!b||e.hp>b.hp))b=e;if(b){b.hp=0;n.hp=0;fx.push({a:n,b:{x:b.x,y:b.y},t:.5,c:'#ffffff',w:6})}}
+  else if(d.fx=='air'){if(n.cool<=0&&n.buf.bomb>0&&enemies.length){const e=enemies[Math.floor(Math.random()*enemies.length)];n.buf.bomb--;n.cool=12;
+   for(const o of enemies)if(Math.hypot(o.x-e.x,o.y-e.y)<100)o.hp-=70;fx.push({a:n,b:{x:e.x,y:e.y},t:.5,c:'#e0b040'})}}
+  else if(d.t){
+   if(d.pw&&(!n.pwd||!ops.has(n.id)))continue;
+   if(d.fx=='pal'){if(!ops.has(n.id))continue;n.t+=dt;if(n.t>=d.t){n.t=0;if((n.buf.gum||0)>=1){n.buf.gum--;score++}else if(workers.length){workers.pop();flash('The palace is starving and ate a unit')}}continue}
+   const bt=btz(d);if(d.dep&&n.dep.amt<=0)continue;
+   if(d.fx=='bio'&&workers.length<=3)continue;
+   if(d.fx=='house'&&workers.length>=unitCap())continue;
+   if((n.type=='factory'||n.type=='efactory')&&S.junk>=clog)continue;
+   if(d.i&&Object.keys(d.i).some(r=>(n.buf[r]||0)<d.i[r]*bt))continue;
+   if(Object.values(n.out).reduce((a,b)=>a+b,0)+(n.q?n.q.length:0)>=12-bt-ex)continue;
+   n.t+=dt*boost*(MP.some(o=>Math.hypot(o.x-n.x,o.y-n.y)<160)?1.5:1);if(n.t<d.t*bt)continue;n.t=0;
+   for(const r in d.i)n.buf[r]-=d.i[r]*bt;if(d.dep)n.dep.amt-=bt;if(d.fx=='bio')workers.pop();
+   for(const r0 in d.o){const r=d.dep&&(n.dep.res||(Math.random()<.12?'bone':''))||r0;if(d.dir)S[r]+=d.o[r0];else{const a=d.o[r0]*bt+(bt>1?ex:0);if(a>1){n.q=n.q||[];for(let i=0;i<a;i++)n.q.push({r,t:i/a})}else n.out[r]=(n.out[r]||0)+a}}
+   if(d.fx=='altar')n.on=35;if(d.fx=='pac')n.act=30;if(d.fx=='soft'){const L=['metal','pearl','meat','bone','gum','gear'],r=L[Math.floor(Math.random()*L.length)];n.out[r]=(n.out[r]||0)+2}if(d.fx=='house')spawnWorker()}}
+ beltTick(dt);for(const w of workers)stepWorker(w,dt);workers=workers.filter(w=>!w.dead);
+ facUpdate(dt);nextWave-=dt;if(nextWave<=0&&N.size){wave++;nextWave=Math.min(300,waveEvery/cfg.rf+(DR.t||0));warned=0;raid()}else if(nextWave<=10&&!warned&&N.size&&nextWave<1e8){warned=1;DR.fa=Math.random()*6.283;flash('Raid incoming in 10 seconds from the '+compass(DR.fa)+'!')}
+ const SF=mods.filter(o=>!o.bp&&o.act>0&&M[o.type].fx=='soft');for(const e of enemies){e.t-=dt;if(!e.tg||!N.has(e.tg.id)||e.t<=0){e.t=.6;let b=null,bd=1e9;for(const n of N.values()){const d=Math.hypot(n.x-e.x,n.y-e.y)*(n.type=='biobait'?.4:1)*(EN[e.ty].pf&&EN[e.ty].pf(n)?.5:1);if(d<bd){bd=d;b=n}}e.tg=b}
+  if(e.tg){const T=EN[e.ty],dx=e.tg.x-e.x,dy=e.tg.y-e.y,d=Math.hypot(dx,dy);if(d>(T.rg||14)){const sl=SF.some(o=>Math.hypot(o.x-e.x,o.y-e.y)<180)?.6:1;e.x+=dx/d*T.spd*dt*sl;e.y+=dy/d*T.spd*dt*sl}else if(T.boom){for(const o of N.values())if(Math.hypot(o.x-e.x,o.y-e.y)<50)o.hp-=45;e.hp=0;fx.push({a:{x:e.x,y:e.y},b:{x:e.x+1,y:e.y},t:.3,c:'#ff7a3d',w:30})}else{e.tg.hp-=T.dmg*dt;if(T.rg)fx.push({a:e,b:e.tg,t:.05,c:T.col})}}}
+ hitScan(dt);const b4=enemies.length;enemies=enemies.filter(e=>e.hp>0);kills+=b4-enemies.length;S.metal+=b4-enemies.length;dirTick();
+ for(const n of mods){if(n.hp<=0)kill(n);else if(n.hp<n.max&&Math.random()<dt*.05)n.hp++}
+ fx=fx.filter(f=>(f.t-=dt)>0);if(msgT>0&&(msgT-=dt)<=0)$('msg').textContent=''}
+function hud(){mini();document.querySelectorAll('#mods button').forEach(b=>{const c=M[b.dataset.t].c;b.classList.toggle('no',!Object.keys(c).every(r=>S[r]>=c[r]))});for(let i=0;i<MD.length;i++)$('mc'+i).textContent=workers.filter(w=>w.mode==i).length;$('res').innerHTML=Object.keys(RES).filter(k=>S[k]>=1||k=='metal').map(k=>`<span>${ri(k)}${rname(k)} ${Math.floor(S[k])}</span>`).join('');
+ $('st').textContent='Units '+workers.length+'/'+unitCap()+'  Wave '+wave+'  Next '+(nextWave>1e8?'off':Math.ceil(nextWave)+'s')+'  Tribute '+score+(gm=='cp'?'  | Level '+(lvl+1)+': '+LV[lvl].g:'')}
+function tabs(){$('tabs').innerHTML=KN.map((t,i)=>`<button data-tab="${i}" style="--tc:${KC[i]}" class="${i==tab?'on':''}">${t}</button>`).join('');
+ $('mods').innerHTML=Object.keys(M).filter(k=>M[k].k==tab&&ok(k)).map(k=>`<button data-t="${k}" style="--tc:${KC[M[k].k]}" class="${k==tool?'on':''}">${M[k].n}<small>${Object.keys(M[k].c).map(r=>M[k].c[r]+' '+r).join(', ')}</small></button>`).join('')}
+const sx=x=>(x-cam.x)*cam.z+W/2,sy=y=>(y-cam.y)*cam.z+H/2,wx=x=>(x-W/2)/cam.z+cam.x,wy=y=>(y-H/2)/cam.z+cam.y;
+function circ(x,y,r,f,s){g.beginPath();g.arc(sx(x),sy(y),r*cam.z,0,6.283);if(f){g.fillStyle=f;g.fill()}if(s){g.strokeStyle=s;g.stroke()}}
+function draw(){const cs=getComputedStyle(document.documentElement),bg=cs.getPropertyValue('--bg'),ink=cs.getPropertyValue('--ink'),gr=cs.getPropertyValue('--grid');
+ g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=bg;g.fillRect(0,0,W,H);g.lineWidth=1;g.strokeStyle=gr;
+ const gs=80*Math.pow(2,Math.max(0,Math.ceil(Math.log2(.3/cam.z)))),x0=Math.floor(wx(0)/gs)*gs,y0=Math.floor(wy(0)/gs)*gs;g.beginPath();
+ for(let x=x0;x<=wx(W);x+=gs){g.moveTo(sx(x),0);g.lineTo(sx(x),H)}for(let y=y0;y<=wy(H);y+=gs){g.moveTo(0,sy(y));g.lineTo(W,sy(y))}g.stroke();
+ if(LIM){const bx=sx(-LIM.w/2),by=sy(-LIM.h/2);g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.rect(0,0,W,H);g.rect(bx,by,LIM.w*cam.z,LIM.h*cam.z);g.fill('evenodd');g.strokeStyle='#d64545';g.lineWidth=3;g.setLineDash([12,8]);g.strokeRect(bx,by,LIM.w*cam.z,LIM.h*cam.z);g.setLineDash([])}
+ if(cam.z>=.12)for(let cx=Math.floor(wx(-40)/CS);cx<=Math.floor(wx(W+40)/CS);cx++)for(let cy=Math.floor(wy(-40)/CS);cy<=Math.floor(wy(H+40)/CS);cy++)for(let k=0;k<3;k++){
+  const d=dep(cx,cy,k);if(!d)continue;if(d.mon)drawDep(d);
+  else if(d.amt>0)drawDep(d)}
+ if(cam.z>=.12)drawBases();for(const d of ED)if(d.mon||d.amt>0)drawDep(d);if(cam.z<.4)drawPol();drawRange();
+ g.lineWidth=3*cam.z;g.lineCap='round';g.strokeStyle='rgba(111,138,153,.75)';g.beginPath();
+ for(const n of N.values())for(const i of n.links)if(i>n.id){const m=N.get(i);if(m&&!fast.has(fk(n.id,i))){g.moveTo(sx(n.x),sy(n.y));g.lineTo(sx(m.x),sy(m.y))}}g.stroke();
+ g.strokeStyle='#e08fbf';g.lineWidth=3.5*cam.z;g.beginPath();
+ for(const n of N.values())for(const i of n.links)if(i>n.id){const m=N.get(i);if(m&&fast.has(fk(n.id,i))){g.moveTo(sx(n.x),sy(n.y));g.lineTo(sx(m.x),sy(m.y))}}g.stroke();
+ drawBelts();g.lineWidth=2;g.textAlign='center';g.textBaseline='middle';
+ for(const n of N.values()){g.globalAlpha=n.bp?.4:1;const d=M[n.type],bad=d.pw&&!n.pwd;circ(n.x,n.y,d.r||10,n.type=='core'?'#3b82c4':KC[d.k],bad?'#d64545':ink);
+  if(d.r!=5){g.fillStyle='#10181d';g.font=Math.max(7,(d.r||10)*cam.z*.9)+'px sans-serif';g.fillText(d.n.slice(0,2),sx(n.x),sy(n.y));if(cam.z>1.1){g.fillStyle=ink;g.font=10*cam.z+'px sans-serif';g.fillText(d.n,sx(n.x),sy(n.y)+((d.r||10)+8)*cam.z)}}
+  {const it=[],R0=(d.r||10)+7;for(const k in n.out)for(let q=0;q<Math.floor(n.out[k]);q++)it.push(k);for(let q=0;q<Math.min(it.length,12);q++){const a=SLO[q]/12*6.283-1.571;rd(n.x+Math.cos(a)*R0,n.y+Math.sin(a)*R0,3.5,it[q],ink)}}
+  if(n.on>0)circ(n.x,n.y,(d.r||10)+4,null,'#c75b5b');if(n.act>0)circ(n.x,n.y,(d.r||10)+4,null,'#e08fbf');bpDraw(n,d);
+  if(n.hp<n.max){g.fillStyle='#d64545';g.fillRect(sx(n.x)-12*cam.z,sy(n.y)-((d.r||10)+8)*cam.z,24*cam.z*n.hp/n.max,3*cam.z)}}
+ g.globalAlpha=1;for(const w of workers){if(SHU){g.strokeStyle=MC[w.mode]||'#8a8f94';g.lineWidth=2;g.beginPath();g.arc(sx(w.x),sy(w.y),7,0,6.283);g.stroke()}if(w.n>0){if(w.bag){let i=0;for(const r in w.bag)if(w.bag[r]>0){rd(w.x+i*5,w.y-i*3,4,r,ink);i++}}else rd(w.x,w.y,w.dr?4.5:4,w.r,ink)}else circ(w.x,w.y,(w.dr?4:3.5)+(w.hf>0?2:0),w.hf>0?'#ff6b6b':w.dr?RES.drone:(MD[w.mode]||['','#8a8f94'])[1],ink)}
+ for(const f of fx){g.strokeStyle=f.c||'#2aa198';g.lineCap='round';g.lineWidth=f.w||2;g.beginPath();g.moveTo(sx(f.a.x),sy(f.a.y));g.lineTo(sx(f.b.x),sy(f.b.y));g.stroke()}
+ for(const e of enemies)drawEn(e);drawFx2();
+ if(tool&&tool!='fast'&&tool!='belt'&&!over){const m=wx(mouse.x),n=wy(mouse.y),r=check(tool,m,n),ok=!r.e||r.e.startsWith('Need');
+  if(r.ns){g.strokeStyle='rgba(42,161,152,.6)';g.lineWidth=1.5;g.beginPath();for(const o of r.ns.slice(0,3)){g.moveTo(sx(r.x),sy(r.y));g.lineTo(sx(o.n.x),sy(o.n.y))}g.stroke()}
+  circ(r.x,r.y,M[tool].r||10,ok?'rgba(42,161,152,.5)':'rgba(214,69,69,.5)',ink);
+  if(M[tool].rg){g.setLineDash([5,5]);circ(r.x,r.y,M[tool].rg,null,ink);g.setLineDash([])}}}
+let last=performance.now();
+function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;
+ const s=520*SET.pan*dt/cam.z;if(keys.a||keys.arrowleft)cam.x-=s;if(keys.d||keys.arrowright)cam.x+=s;if(keys.w||keys.arrowup)cam.y-=s;if(keys.s||keys.arrowdown)cam.y+=s;
+ if(LIM){cam.x=Math.max(-LIM.w/2-150,Math.min(LIM.w/2+150,cam.x));cam.y=Math.max(-LIM.h/2-150,Math.min(LIM.h/2+150,cam.y))}for(let i=0;i<sp&&!over&&!paused&&!blocked();i++)update(dt);if((hudT-=dt)<=0){hudT=.15;hud()}draw();locator();requestAnimationFrame(loop)}
+const keys={};
+function syncSp(){$('sp').textContent='×'+sp;$('sp').classList.toggle('on',sp>1)}
+function speed(){sp=sp==1?2:sp==2?4:sp==4?8:1;syncSp();ls.set('nf-speed',sp)}
+addEventListener('keydown',e=>{if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;const k=e.key.toLowerCase();keys[k]=1;if(k==' '){e.preventDefault();speed()}if(k=='p')pause();if(k>='1'&&k<='3'){tab=+k-1;tabs()}
+ if(k=='tab'){e.preventDefault();if(!['skm','hub','rme'].some(vis))vis('keys')?closeOv():openOv('keys',vis('menu')?'menu':'game')}
+ if(k=='f1'||k=='?'){e.preventDefault();if(!['skm','hub','rme'].some(vis))vis('help')?closeOv():openOv('help',vis('menu')?'menu':'game')}
+ if(k=='h'&&!blocked())home();if(k=='m'&&!blocked()){SET.mm=SET.mm?0:1;ls.set('nf-settings',SET)}
+ if(k=='escape'){if(blocked())closeOv();else if(tool){tool=null;tabs()}else if(npOpen())closeNP();else if(!over&&!ed)openOv('pm','game')}
+ if(k=='x'&&!over){const m=wx(mouse.x),n=wy(mouse.y);for(const o of N.values())if(o.type!='core'&&Math.hypot(o.x-m,o.y-n)<14){
+  if((o.type=='house'||o.type=='palace')&&time-o.born>10)flash('Houses and palaces can only be destroyed by bombs');else kill(o);break}}});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+let drag=null;
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,mv:0,b:e.button};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};
+ if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(drag.mv||Math.hypot(dx,dy)>5||drag.b){drag.mv=1;cam.x-=dx/cam.z;cam.y-=dy/cam.z;drag.x=e.clientX;drag.y=e.clientY}}});
+cv.addEventListener('pointerup',e=>{if(blocked()){drag=null;return}if(drag&&!drag.mv&&drag.b==0&&ed)edClick(wx(mouse.x),wy(mouse.y));if(drag&&!drag.mv&&drag.b==0&&!over){const x=wx(mouse.x),y=wy(mouse.y);
+  if(tool=='fast'){for(const n of N.values())for(const i of n.links){const m=N.get(i);if(!m||i<n.id||fast.has(fk(n.id,i)))continue;
+    const dx=m.x-n.x,dy=m.y-n.y,t=Math.max(0,Math.min(1,((x-n.x)*dx+(y-n.y)*dy)/(dx*dx+dy*dy)));
+    if(Math.hypot(n.x+dx*t-x,n.y+dy*t-y)<10/cam.z){if(S.gum>=1&&S.metal>=1){S.gum--;S.metal--;fast.add(fk(n.id,i))}else flash('Need 1 gum, 1 metal');return}}}
+  else if(tool=='belt')beltClick(x,y);else if(tool)place(tool,x,y);
+  else{let b=null,bd=16/cam.z;for(const n of N.values()){const d=Math.hypot(n.x-x,n.y-y);if(d<bd){bd=d;b=n}}
+   if(b)openNP(b.id,e.clientX,e.clientY);else if(!linkClick(x,y,e)&&!baseClick(x,y,e))closeNP()}}
+ if(drag&&!drag.mv&&drag.b==2){tool=null;tabs()}drag=null});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('wheel',e=>{e.preventDefault();const bx=wx(mouse.x),by=wy(mouse.y);cam.z=Math.max(1e-5,Math.min(2.5,cam.z*Math.exp(-e.deltaY*.001)));cam.x=bx-(mouse.x-W/2)/cam.z;cam.y=by-(mouse.y-H/2)/cam.z},{passive:false});
+document.querySelector('.bar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.tab){tab=+b.dataset.tab}else tool=tool==b.dataset.t?null:b.dataset.t;tabs()});
+function setMode(m,d){const ws=workers.filter(w=>!w.dr),cn=i=>ws.filter(w=>w.mode==i);
+ if(d>0){const f=[0,1,2,3].filter(i=>i!=m).sort((a,b)=>cn(b).length-cn(a).length)[0],c=cn(f),w=c.find(w=>w.st=='idle'||w.st=='work')||c[0];if(w)assign(w,m)}
+ else if(m){const c=cn(m),w=c.find(w=>w.st=='work'||w.st=='idle')||c[0];if(w)assign(w,0)}}
+$('modes').innerHTML=MD.map((m,i)=>`<div><i style="background:${m[1]}"></i>${m[0]} <b id="mc${i}">0</b> <input type="range" class="ms" data-m="${i}" min="0" max="0" value="0" step="1" style="width:90px" aria-label="${m[0]} units"></div>`).join('');
+$('modes').onclick=e=>{const b=e.target.closest('button');if(b)setMode(+b.dataset.m,+b.dataset.d)};
+const ls={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return 1}catch(e){return 0}}};
+let ed=0,ED=[],ED0=[],edid=0,blank=0,blank0=0,CR=[],CM={},LIM=null,LIM0=null,curMap='',rtab=0,redit=null,rfrom='menu',cfg={dm:1,hm:1,df:1,sz:1,rf:1,gw:[3,2,1]};
+const edp=$('edp'),maps=()=>ls.get('nf-maps')||{},saveCustom=()=>ls.set('nf-custom',{CR,CM,CMOD,RC,CT}),clean=s=>[...s.replace(/[<>&"'`\\]/g,'').trim()].slice(0,20).join(''),
+ showUI=on=>{document.querySelector('.bar').style.display=$('modes').style.display=on?'':'none'};
+let CMOD=[],RC={},CT=[];const cu=ls.get('nf-custom');if(cu){CR=cu.CR||[];CM=cu.CM||{};CMOD=cu.CMOD||[];CT=cu.CT||[];RC=cu.RC||{};for(const r of CR)regRes(r);for(const m of CMOD)regMod(m)}
+const EN={
+scout:{n:'Scout',hp:18,spd:80,dmg:6,r:5,col:'#e0b040',sh:'tri',w:3,min:1,d:'fast and fragile, hunts your producers',pf:n=>M[n.type].t&&!M[n.type].fx},
+raider:{n:'Raider',hp:30,spd:42,dmg:12,r:7,col:'#d64545',sh:'tri',w:5,min:1,d:'standard melee attacker'},
+bomber:{n:'Bomber',hp:24,spd:58,dmg:0,r:6,col:'#ff7a3d',sh:'dia',w:2,min:4,boom:1,d:'explodes on contact, damaging everything nearby'},
+spitter:{n:'Spitter',hp:36,spd:36,dmg:9,r:7,col:'#3ec9a7',sh:'cross',w:2,min:4,rg:95,d:'ranged attacker that shoots from a distance'},
+brute:{n:'Brute',hp:120,spd:26,dmg:28,r:11,col:'#9a4bd6',sh:'hex',w:2,min:7,d:'slow, tough, goes for turrets and lasers first',pf:n=>M[n.type].fx=='turret'||M[n.type].fx=='laser'},
+minigun:{n:'Minigunner',hp:48,spd:30,dmg:14,r:8,col:'#c44a8a',sh:'hex',w:2,min:5,rg:120,d:'ranged, rapid-fire attacker'}};
+function drawEn(e){const T=EN[e.ty],x=sx(e.x),y=sy(e.y),s=T.r*cam.z;g.fillStyle=e.hf>0?'#ffffff':T.col;g.strokeStyle=e.fc||'#10181d';g.lineWidth=e.fc?2.5:1.5;g.beginPath();
+ if(T.sh=='tri'){g.moveTo(x,y-s);g.lineTo(x+s,y+s);g.lineTo(x-s,y+s)}
+ else if(T.sh=='hex'){for(let i=0;i<6;i++)g.lineTo(x+Math.cos(i*1.047)*s,y+Math.sin(i*1.047)*s)}
+ else if(T.sh=='dia'){g.moveTo(x,y-s);g.lineTo(x+s,y);g.lineTo(x,y+s);g.lineTo(x-s,y)}
+ else{const q=s*.35;g.moveTo(x-q,y-s);g.lineTo(x+q,y-s);g.lineTo(x+q,y-q);g.lineTo(x+s,y-q);g.lineTo(x+s,y+q);g.lineTo(x+q,y+q);g.lineTo(x+q,y+s);g.lineTo(x-q,y+s);g.lineTo(x-q,y+q);g.lineTo(x-s,y+q);g.lineTo(x-s,y-q);g.lineTo(x-q,y-q)}
+ g.closePath();g.fill();g.stroke();
+ if(e.hp<e.mh){g.fillStyle='#d64545';g.fillRect(x-s,y-s-5,2*s*Math.max(0,e.hp)/e.mh,3)}}
+function raid(){const HB=hbases(),ns=[...N.values()],pool=Object.keys(EN).filter(k=>EN[k].min<=wave),tw=pool.reduce((a,k)=>a+EN[k].w,0),gw=cfg.gw,gt=(gw[0]+gw[1]+gw[2])||1;
+ DR.act=1;DR.lost=0;DR.n0=N.size;DR.t0=time;const r0=Math.random(),sty=wave<2?'':r0<.3?'swarm':r0<.5?'elite':'',hmul=sty=='swarm'?.6:sty=='elite'?1.35:1;let budget=Math.max(2,Math.round((2+wave*.9)*(wave<=2?.7:1)*cfg.dm*cfg.sz*DR.i*(sty=='swarm'?1.6:sty=='elite'?.65:1)));flash('Wave '+wave+': '+(sty=='swarm'?'swarm of '+budget+' weak invaders':sty=='elite'?'elite squad of '+budget+' tougher invaders':'raid of '+budget+' invaders'));
+ while(budget>0){let r=Math.random()*gt,c=0;while(c<2&&r>=gw[c]){r-=gw[c];c++}
+  const sz=Math.min(budget,[2+Math.floor(Math.random()*2),4+Math.floor(Math.random()*3),7+Math.floor(Math.random()*4)][c]),o=ns[Math.floor(Math.random()*ns.length)],a=DR.fa!=null?DR.fa+(Math.random()-.5)*1.2:Math.random()*6.283,hz=HB.length&&Math.random()<.5?HB[Math.floor(Math.random()*HB.length)]:null;
+  for(let i=0;i<sz;i++){let q=Math.random()*tw,ty=pool[0];for(const k of pool){if((q-=EN[k].w)<0){ty=k;break}}
+   const aa=a+(Math.random()-.5)*.35,dd=650+Math.random()*60,hp=EN[ty].hp*(1+wave*.05)*cfg.hm*hmul*(1+(DR.i-1)*.5);
+   const q2=hz?cl(hz.x+(Math.random()-.5)*40,hz.y+(Math.random()-.5)*40):cl(o.x+Math.cos(aa)*dd,o.y+Math.sin(aa)*dd);enemies.push({x:q2[0],y:q2[1],hp,mh:hp,ty,t:0,tg:null,fc:hz?hz.f.col:null})}
+  budget-=sz}DR.fa=null}
+function drawDep(d){if(d.mon){const cm=CM[d.t],x=sx(d.x),y=sy(d.y),s=16*cam.z;rdraw(d.x,d.y,16,cm&&cm.shape||'diamond',d.found?'rgba(125,139,147,.3)':cm?cm.col:'rgba(140,100,220,.6)',!d.found&&cm&&cm.disp=='emoji'&&cm.emoji);
+  if(cm&&!d.found){g.fillStyle='#888';g.font=Math.max(8,10*cam.z)+'px sans-serif';g.textAlign='center';g.fillText(cm.name,x,y+s+10*cam.z)}}
+ else{const c=d.res?RES[d.res]||'#999':'#c9a227',R=10+14*d.amt/d.m;g.globalAlpha=.3;circ(d.x,d.y,R,c);g.globalAlpha=1;g.lineWidth=2;circ(d.x,d.y,R,null,c);if(d.res)rd(d.x,d.y,7,d.res)}}
+function save(){const d={SEED,LIM,gm,lvl,cfg,blank,ED,S,wave,nextWave,waveEvery,time,score,pwT,idc,cam,kills,FB:[...FB],BL:[...BL],fast:[...fast],
+ nodes:[...N.values()].map(n=>({...n,dk:n.dep&&n.dep.key,dep:undefined})),workers,enemies:enemies.map(e=>({...e,tg:null})),D:[...D.entries()],CR,CM,RS,DR};
+ flash(ls.set('nodefield-save',d)?'Game saved':'Could not save: browser storage is unavailable')}
+function load(){const d=ls.get('nodefield-save');if(!d)return flash('No saved game found');
+ for(const r of d.CR||[])if(!RES[r.id]){CR.push(r);regRes(r)}Object.assign(CM,d.CM||{});
+ SEED=d.SEED;LIM=d.LIM||null;FB.clear();for(const [k,v] of d.FB||[])FB.set(k,v);gm=d.gm;lvl=d.lvl;cfg=d.cfg;blank=d.blank;ED=d.ED;D.clear();for(const [k,v] of d.D)D.set(k,v);
+ N=new Map();for(const n of d.nodes){n.dep=n.dk?(D.get(n.dk)||ED.find(e=>e.key==n.dk)):undefined;N.set(n.id,n)}
+ S=d.S;RS=d.RS||{};DR=d.DR||{i:1};for(const r in RES)if(S[r]==null)S[r]=0;workers=d.workers;enemies=d.enemies;fast=new Set(d.fast);BL.clear();for(const kv of d.BL||[])BL.set(kv[0],kv[1]);closeNP();
+ wave=d.wave;nextWave=d.nextWave;waveEvery=d.waveEvery;time=d.time;score=d.score;pwT=d.pwT;idc=d.idc;cam=d.cam;kills=d.kills||0;tool=null;over=false;ed=0;
+ ['menu','ov','skm'].forEach(i=>$(i).style.display='none');edp.style.display='none';showUI(1);tabs();flash('Game loaded')}
+const SL=[['kf','Deposit frequency',40,200,100],['ks','Raid size',50,300,100],['kr','Raid frequency',50,300,100],['g0','Small raid groups',0,300,300],['g1','Medium raid groups',0,300,200],['g2','Large raid groups',0,300,100]];
+const row=s=>`<label>${s[1]} <input type='range' id='${s[0]}' min='${s[2]}' max='${s[3]}' value='${s[4]}'> <b id='${s[0]}v'>${s[4]/100}×</b></label>`;
+$('skm').innerHTML="<h2>Skirmish</h2><label>Difficulty <select id='kd'><option value='0'>Easy (raids +60s apart)</option><option value='1' selected>Normal (raids as listed)</option><option value='2'>Hard (raids −10s sooner)</option><option value='3'>Brutal (raids −20s sooner)</option></select></label><label>Map size <select id='kz'><option value='inf'>Infinite</option><option value='large'>Large</option><option value='medium'>Medium</option><option value='small'>Small</option><option value='tiny'>Tiny</option></select></label>"+row(SL[0])+'<details><summary>Advanced options</summary>'+SL.slice(1).map(row).join('')+'</details><details><summary>Enemy types</summary>'+Object.values(EN).map(e=>`<p><i style='background:${e.col}'></i>${e.n}: ${e.d}</p>`).join('')+"</details><p><button id='kgo'>Start</button> <button id='kbk'>Back</button></p>";
+$('skm').oninput=e=>{const v=$(e.target.id+'v');if(v)v.textContent=e.target.value/100+'×'};
+$('kgo').onclick=()=>{const d=+$('kd').value,v=i=>$(i).value/100;start('sk',0,{dm:[.7,1,1.4,1.8][d],hm:[.7,1,1.4,2][d],df:v('kf'),sz:v('ks'),rf:v('kr'),gw:[v('g0'),v('g1'),v('g2')],lim:limFrom($('kz').value),ri:[60,0,-10,-20][d]})};
+$('kbk').onclick=()=>{$('skm').style.display='none';$('menu').style.display='block'};
+edp.innerHTML=`<div>Tool <select id="et"><option value="dep">Deposit</option><option value="mon">Monument</option><option value="erase">Erase</option></select> <select id="er" aria-label="Deposit resource"></select><input id="ea" type="number" value="300" min="10" style="width:60px" aria-label="Deposit amount"> <select id="em" aria-label="Monument type"></select></div>
+<div>Map <input id="mapn" type="text" placeholder="map name"> <select id="msz" aria-label="Map size"><option value="inf">Infinite</option><option value="tiny">Tiny 800×800</option><option value="small">Small 1400×1000</option><option value="medium">Medium 2200×1600</option><option value="large">Large 3400×2400</option></select><button id="ep">Procedural deposits: on</button></div>
+<div><button id="mls">Save map</button><button id="mpl">Play</button><button id="mrm">Resource &amp; Monument editor</button><button id="mx">Exit</button></div>`;
+function fillSel(){const o=Object.keys(RES).filter(k=>k!='drone').map(k=>`<option value="${k}">${rname(k)}</option>`).join('');
+ $('er').innerHTML=o;$('em').innerHTML='<option value="">Ancient monument</option>'+Object.keys(CM).map(k=>`<option value='${k}'>${CM[k].name}</option>`).join('');
+ const mk=Object.keys(maps());$('ml').innerHTML=mk.length?mk.map(k=>`<option>${k}</option>`).join(''):'<option value="">(none saved)</option>'}
+function openEditor(){ed=1;gm='ed';ED=ED0;blank=blank0;LIM=LIM0;reset();over=true;['menu','hub','ov'].forEach(i=>$(i).style.display='none');showUI(0);edp.style.display='block';fillSel();$('mapn').value=curMap;$('msz').value=szKey(LIM0);$('ep').textContent='Procedural deposits: '+(blank0?'off':'on');flash('Editor: click to place, right-drag to pan, wheel to zoom')}
+function edClick(x,y){const t=$('et').value;if(t!='erase'&&LIM&&(Math.abs(x)>LIM.w/2||Math.abs(y)>LIM.h/2))return;
+ if(t=='erase'){let bi=-1,bd=24;ED.forEach((d,i)=>{const e=Math.hypot(d.x-x,d.y-y);if(e<bd){bd=e;bi=i}});if(bi>=0)ED.splice(bi,1);return}
+ const key='E'+(++edid)+'_'+Math.floor(Math.random()*1e6);
+ if(t=='dep'){const a=Math.max(10,+$('ea').value||300),r=$('er').value;ED.push({x,y,amt:a,m:a,res:r=='metal'?undefined:r,key})}
+ else ED.push({x,y,amt:0,m:1,mon:1,t:$('em').value||undefined,key})}
+$('ep').onclick=()=>{blank0=blank0?0:1;blank=blank0;D.clear();FB.clear();$('ep').textContent='Procedural deposits: '+(blank0?'off':'on')};
+$('mls').onclick=()=>{const n=clean($('mapn').value)||'map',m=maps();m[n]={ED:ED0,blank:blank0,seed:SEED,lim:LIM0};curMap=n;flash(ls.set('nf-maps',m)?'Map saved: '+n:'Could not save: browser storage is unavailable');fillSel()};
+$('mpl').onclick=()=>start('map',0);
+$('mx').onclick=()=>{ed=0;edp.style.display='none';showUI(1);over=true;fillSel();$('hub').style.display='block'};
+const LV=[
+{n:'First Steps',g:'stockpile 60 metal and 10 pearl',ok:()=>S.metal>=60&&S.pearl>=10,ws:1e9,we:40},
+{n:'Fed and Housed',g:'10 food and a House',ok:()=>S.food>=10&&cnt('house')>=1,ws:150,we:60},
+{n:'Hold the Line',g:'survive 4 waves',ok:()=>wave>=4&&!enemies.length,ws:60,we:40},
+{n:'Mad Science',g:'5 pills and 5 gears',ok:()=>S.pill>=5&&S.gear>=5,ws:120,we:45},
+{n:'Tribute',g:'6 palace tribute, survive wave 6',ok:()=>score>=6&&wave>=6,ws:60,we:35}];
+let gm='sb',lvl=0,auto=0,autoT=0,waveEvery=40;
+function assign(w,m){if(w.mode==3||m==3){w.st='idle';w.p=[];w.n=0}
+ if(w.mode==3){let b=null,bd=1e9;for(const n of N.values()){const d=Math.hypot(n.x-w.x,n.y-w.y);if(d<bd){bd=d;b=n}}if(b){w.x=b.x;w.y=b.y;w.at=b.id}}
+ w.mode=m}
+function balance(){const ws=workers.filter(w=>!w.dr&&w.mode>=0);if(!ws.length)return;const ms=[...N.values()];
+ let left=ws.length-Math.max(1,Math.ceil(ws.length*.4));const w3=Math.min(left,Math.ceil(enemies.length/2));left-=w3;
+ const w2=Math.min(left,Math.min(3,ms.filter(n=>n.bp).length));left-=w2;const w1=Math.min(left,ms.filter(n=>!n.bp&&man(M[n.type])).length);
+ const t=[ws.length-w1-w2-w3,w1,w2,w3],c=i=>ws.filter(w=>w.mode==i).length;
+ for(let k=0;k<6;k++){const j=t.findIndex((x,q)=>c(q)<x),i=t.findIndex((x,q)=>c(q)>x);if(j<0||i<0)break;const w=ws.find(w=>w.mode==i&&(w.st=='idle'||w.st=='work'||i==3));if(!w)break;assign(w,j)}}
+function start(m,l,c0){if(paused)pause();syncSp();gm=m;lvl=l;cfg=c0||(m=='sk'?cfg:{dm:1,hm:1,df:1,sz:1,rf:1,gw:[3,2,1]});if(m=='map'){ED=JSON.parse(JSON.stringify(ED0));blank=blank0}else{ED=[];blank=0}LIM=m=='map'?LIM0:m=='sk'?cfg.lim||null:null;ed=0;edp.style.display='none';$('skm').style.display=$('hub').style.display=$('rme').style.display='none';showUI(1);reset();const c=m=='cp'?LV[l]:{ws:240,we:130};const rt0=(SET.rt||0)+(cfg.ri||0),wsx=c.ws>1e8?c.ws:m=='cp'?Math.max(c.ws*1.6,150):c.ws,wex=m=='cp'?Math.max(c.we*1.8,110):c.we;nextWave=Math.max(15,wsx/cfg.rf+rt0);waveEvery=Math.max(15,wex+rt0);
+ if(m=='sb')for(const r in RES)if(r!='drone')S[r]=300;
+ $('menu').style.display='none';$('nx').style.display='none';$('ov').style.display='none'}
+function win(){over=true;const last=lvl>=LV.length-1;$('ot').textContent=last?'Campaign complete':'Level complete';$('sc').textContent=LV[lvl].n+' cleared.';$('nx').style.display=last?'none':'';$('ov').style.display='block'}
+function toMenu(){over=true;$('menu').style.display='block';$('ov').style.display='none'}
+$('modes').innerHTML+='<div><button id="au">Auto: off</button> <button id="mn">Menu</button> <button id="sv">Save</button></div>';
+$('au').onclick=()=>{auto=!auto;$('au').textContent='Auto: '+(auto?'on':'off');autoT=0};
+$('mn').onclick=()=>openOv('pm','game');$('mn2').onclick=toMenu;$('sv').onclick=save;
+$('cp').onclick=()=>start('cp',0);$('bsk').onclick=()=>{$('menu').style.display='none';$('skm').style.display='block'};$('bld').onclick=load;$('sb').onclick=()=>start('sb',0);$('nx').onclick=()=>start('cp',lvl+1);$('rs').onclick=()=>start(gm,lvl);
+let paused=0,warned=0;function pause(){paused=!paused;$('pz').textContent=paused?'▶':'⏸';$('pz').classList.toggle('on',paused)}
+{const v=ls.get('nf-speed');if([1,2,4,8].includes(v)){sp=v;syncSp()}}
+$('pz').onclick=pause;$('sp').onclick=speed;addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(b)b.blur()});
+const hmsg=t=>$('hm').textContent=t;
+function loadMap(m,n){ED0=m.ED;ED=ED0;blank0=blank=m.blank;LIM0=m.lim||null;SEED=m.seed;D.clear();FB.clear();curMap=n}
+$('bed').onclick=()=>{$('menu').style.display='none';fillSel();hmsg('');$('hub').style.display='block'};
+$('hnew').onclick=()=>{ED0=[];blank0=0;LIM0=null;curMap='';openEditor()};
+$('hed').onclick=()=>{const k=$('ml').value,m=maps()[k];if(!m)return hmsg('No saved map selected');loadMap(m,k);openEditor()};
+$('hpl').onclick=()=>{const k=$('ml').value,m=maps()[k];if(!m)return hmsg('No saved map selected');loadMap(m,k);start('map',0)};
+$('hdel').onclick=()=>{const k=$('ml').value,m=maps();if(!m[k])return hmsg('No saved map selected');delete m[k];ls.set('nf-maps',m);fillSel();hmsg('Deleted '+k)};
+$('hbk').onclick=()=>{$('hub').style.display='none';$('menu').style.display='block'};
+$('msz').onchange=()=>{LIM0=limFrom($('msz').value);LIM=LIM0;D.clear();FB.clear()};
+function openRme(){rtab=0;redit=null;$('rme').style.display='block';rmeDraw()}
+$('brm').onclick=()=>{rfrom='menu';$('menu').style.display='none';openRme()};
+$('mrm').onclick=()=>{rfrom='ed';edp.style.display='none';openRme()};
+$('rme').innerHTML='<h2>Resource &amp; Monument Editor</h2><p>Make your own resources and monuments, shown as a shape or an emoji. They appear in the Map Editor and Sandbox.</p><div class="tr"><button id="rt0">Resources</button><button id="rt1">Monuments</button></div><div id="rf"></div><p id="rm"></p><div id="rl"></div><p><button id="rbk">Back</button></p>';
+const rmsg=t=>$('rm').textContent=t,pv=()=>{$('fp').innerHTML=ricon($('fs').value,$('fc').value,$('fd').value=='emoji'&&$('fe').value.trim(),28)};
+function rmeDraw0(){const M1=rtab==1,v=(M1?CM[redit]:CR.find(r=>r.id==redit))||{};
+ $('rt0').classList.toggle('on',!M1);$('rt1').classList.toggle('on',M1);
+ $('rf').innerHTML=`<label>Name <input id="fn" type="text" maxlength="24" value="${v.name||''}" placeholder="name (emoji allowed)"></label>
+<label>Color <input id="fc" type="color" value="${v.col||'#44ddaa'}"></label>
+<label>Display as <select id="fd"><option value="shape">Shape</option><option value="emoji"${v.disp=='emoji'?' selected':''}>Emoji</option></select></label>
+<label>Shape <select id="fs">${Object.keys(SP).map(k=>`<option${k==(v.shape||(M1?'diamond':'circle'))?' selected':''}>${k}</option>`).join('')}</select></label>
+<label>Emoji <input id="fe" type="text" maxlength="12" value="${v.emoji||''}" placeholder="😀"></label>`+(M1?`<label>Reward <select id="fr"></select></label><label>Reward amount <input id="fa" type="number" min="0" value="${v.amt??20}"></label><label>Units gained <input id="fu" type="number" min="0" max="30" value="${v.units??5}"></label>`:'')+`<p>Preview <span id="fp"></span></p><p><button id="fok">${redit?'Update':'Add'}</button>${redit?' <button id="fcl">Cancel</button>':''}</p>`;
+ if(M1)$('fr').innerHTML='<option value="">none</option>'+Object.keys(RES).filter(k=>k!='drone').map(k=>`<option value="${k}"${k==v.res?' selected':''}>${rname(k)}</option>`).join('');
+ pv();const L=M1?Object.keys(CM).map(k=>[k,CM[k].name,CM[k].shape||'diamond',CM[k].col,CM[k].disp=='emoji'&&CM[k].emoji]):CR.map(r=>[r.id,r.name||r.id,r.shape,r.col,r.disp=='emoji'&&r.emoji]);
+ $('rl').innerHTML=L.length?L.map(a=>`<div class="ri">${ricon(a[2],a[3],a[4],18)} ${a[1]}<button data-e="${a[0]}">Edit</button><button data-d="${a[0]}">Delete</button></div>`).join(''):'<p style="opacity:.7">Nothing custom yet</p>'}
+function rmeSave0(){const n=clean($('fn').value),em=$('fe').value.trim(),dp=$('fd').value;
+ if(!n)return rmsg('Enter a name');if(dp=='emoji'&&!em)return rmsg('Type an emoji, or display as Shape');
+ const o={name:n,col:$('fc').value,shape:$('fs').value,emoji:em,disp:dp},low=n.toLowerCase();
+ if(rtab){if(Object.keys(CM).some(k=>k!=redit&&CM[k].name.toLowerCase()==low))return rmsg('That monument name is taken');
+  Object.assign(o,{res:$('fr').value,amt:Math.max(0,+$('fa').value||0),units:Math.max(0,Math.min(30,+$('fu').value||0))});
+  let id=redit;if(!id){const b='m_'+low.replace(/ /g,'_');id=b;let i=2;while(CM[id])id=b+i++}CM[id]=o}
+ else{if(Object.keys(RES).some(k=>k!=redit&&rname(k).toLowerCase()==low))return rmsg('That resource name is taken');
+  let id=redit;if(!id){const b=low.replace(/ /g,'_');id=b;let i=2;while(RES[id])id=b+i++;o.id=id;CR.push(o);S[id]=0}else Object.assign(CR.find(r=>r.id==id),o);
+  regRes(CR.find(r=>r.id==id))}
+ saveCustom();rmsg((redit?'Updated ':'Added ')+n);redit=null;rmeDraw()}
+$('rme').oninput=()=>{if($('fp'))pv()};
+$('rme').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.id=='rt0'||b.id=='rt1'){rtab=+b.id[2];redit=null;rmsg('');rmeDraw()}
+ else if(b.id=='rbk'){$('rme').style.display='none';if(rfrom=='ed'){edp.style.display='block';fillSel()}else $('menu').style.display='block'}
+ else if(b.id=='fok')rmeSave();
+ else if(b.id=='fcl'){redit=null;rmeDraw()}
+ else if(b.dataset.e){redit=b.dataset.e;rmsg('');rmeDraw()}
+ else if(b.dataset.d){const k=b.dataset.d;if(rtab)delete CM[k];else{CR=CR.filter(r=>r.id!=k);delete RES[k];delete RI[k];delete S[k]}saveCustom();redit=null;rmeDraw()}};
+const OVS=['pm','set','help','keys'],vis=i=>$(i).style.display=='block',blocked=()=>OVS.some(vis);let ctx='menu',fromPm=0,HA=[],mmv={cx:0,cy:0,k:.1};
+function openOv(id,c,fp){ctx=c;fromPm=fp?1:0;OVS.forEach(i=>$(i).style.display='none');if(c=='menu')$('menu').style.display='none';$(id).style.display='block';if(id=='help')helpDraw('');if(id=='set')syncSet()}
+function closeOv(){const w=fromPm;OVS.forEach(i=>$(i).style.display='none');fromPm=0;if(ctx=='menu')$('menu').style.display='block';else if(w)$('pm').style.display='block'}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.cl'))closeOv()});
+$('bm').onclick=()=>{if(!over&&!ed)openOv('pm','game')};$('bs').onclick=()=>openOv('set',vis('menu')?'menu':'game');$('bq').onclick=()=>openOv('help','game');
+$('bset').onclick=()=>openOv('set','menu');$('bhelp').onclick=()=>openOv('help','menu');$('bkeys').onclick=()=>openOv('keys','menu');
+$('pm').innerHTML='<h2>Paused</h2><button id="pmr" class="cl">Resume</button><button id="pms">Save game</button><button id="pmt">Settings</button><button id="pmh">Help</button><button id="pmk">Keybinds</button><button id="pmm">Main menu</button>';
+$('pms').onclick=save;$('pmt').onclick=()=>openOv('set','game',1);$('pmh').onclick=()=>openOv('help','game',1);$('pmk').onclick=()=>openOv('keys','game',1);$('pmm').onclick=()=>{closeOv();toMenu()};
+const KEYS=[['W A S D / Arrows','Pan the camera'],['Mouse wheel','Zoom in and out'],['Left click','Place the selected building, or inspect a node'],['Right click / Esc','Cancel the selected building'],['Drag','Pan the map'],['1 / 2 / 3','Switch build tab'],['Space','Cycle game speed (×1 ×2 ×4 ×8)'],['P','Pause / resume'],['X (over a node)','Destroy that node'],['H','Jump to your core'],['I','Inventory: stock, production and loss per second'],['!','Raid determinator: every AI director decision'],['U','Highlight every unit'],['Y (over a building)','Switch between its recipes'],['V','Map view: fit the whole map, press again to return'],['+ / −','Zoom in / out'],['G (over a Motivator)','Switch Motivator mode'],['T','Research tree (needs a Science Center)'],['M','Show / hide the minimap'],['Tab','Show / hide this keybind list'],['F1 or ?','Open the Help encyclopedia'],['Esc','Cancel tool, open the pause menu, close windows']];
+$('keys').innerHTML='<h2>Keybinds</h2><table class="kt">'+KEYS.map(k=>`<tr><td>${k[0]}</td><td>${k[1]}</td></tr>`).join('')+'</table><p style="text-align:center"><button class="cl">Close</button></p>';
+$('set').innerHTML='<h2>Settings</h2><label>Theme <select id="stth"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label><label>Minimap <input type="checkbox" id="stmm"></label><label>Base locator arrow <input type="checkbox" id="stlc"></label><label>Camera speed <input type="range" id="stpn" min="50" max="250" step="10"> <b id="stpnv"></b></label><label>Starting units <input type=\"range\" id=\"stsu\" min=\"1\" max=\"30\" step=\"1\"> <b id=\"stsuv\"></b></label><label>Raid bar color <input type=\"color\" id=\"rbc\"></label><label>Raid determinator <input type=\"checkbox\" id=\"dron\"></label><label>Annihilation chance % <input type=\"range\" id=\"dra\" min=\"0\" max=\"25\"> <b id=\"drav\"></b></label><label>Mercy chance % <input type=\"range\" id=\"drm\" min=\"0\" max=\"100\"> <b id=\"drmv\"></b></label><label>Pressure raids % <input type=\"range\" id=\"drp\" min=\"0\" max=\"100\"> <b id=\"drpv\"></b></label><label>Raid timing <input type="range" id="strt" min="-20" max="180" step="5"> <b id="strtv"></b></label><p style="opacity:.7;max-width:340px">Raid timing adds or removes seconds between raids in every mode: more time for an easier game, less for a harder one. Skirmish difficulty adds its own bonus on top. Starting units sets how many units you begin with. Applies to new games.</p><p><button class="cl">Back</button></p>';
+const fmtT=t=>{const a=Math.abs(t),m=Math.floor(a/60),q=a%60;return(t<0?'−':t>0?'+':'')+(m?m+'m ':'')+(q||!m?q+'s':'')};
+function syncSet(){$('stth').value=SET.th;$('stmm').checked=!!SET.mm;$('stlc').checked=!!SET.loc;$('stpn').value=SET.pan*100;$('strt').value=SET.rt;$('stsu').value=SET.su;$('stsuv').textContent=SET.su;$('rbc').value=SET.rbc||'#8b5a2b';{const D0=DC();$('dron').checked=!!D0.on;$('dra').value=D0.a;$('drm').value=D0.m;$('drp').value=D0.p;$('drav').textContent=D0.a;$('drmv').textContent=D0.m;$('drpv').textContent=D0.p}$('stpnv').textContent=SET.pan+'×';$('strtv').textContent=fmtT(SET.rt)}
+function applySet(){const r=document.documentElement;SET.th=='auto'?r.removeAttribute('data-theme'):r.dataset.theme=SET.th}
+$('set').oninput=()=>{SET.th=$('stth').value;SET.mm=$('stmm').checked?1:0;SET.loc=$('stlc').checked?1:0;SET.pan=$('stpn').value/100;SET.rt=+$('strt').value;SET.su=+$('stsu').value;SET.rbc=$('rbc').value;SET.dr={on:$('dron').checked?1:0,a:+$('dra').value,m:+$('drm').value,p:+$('drp').value};ls.set('nf-settings',SET);applySet();syncSet()};
+Object.assign(SET,ls.get('nf-settings')||{});applySet();
+// minimap + locator
+const mm=$('mm'),mc=mm.getContext('2d'),mmw=$('mmw');
+const home=()=>{const c=CORE();if(c){cam.x=c.x;cam.y=c.y}};$('mh').onclick=home;
+const mmGo=e=>{const r=mm.getBoundingClientRect(),v=mmv;cam.x=v.cx+((e.clientX-r.left)/r.width*150-75)/v.k;cam.y=v.cy+((e.clientY-r.top)/r.height*150-75)/v.k};
+mm.addEventListener('pointerdown',e=>{mm.setPointerCapture(e.pointerId);mmGo(e)});mm.addEventListener('pointermove',e=>{if(e.buttons&1)mmGo(e)});
+function mini(){mmw.style.display=SET.mm?'block':'none';if(!SET.mm)return;
+ const w=150,R=LIM?Math.max(LIM.w,LIM.h)/2+60:700,cx=LIM?0:cam.x,cy=LIM?0:cam.y,k=w/2/R,X=x=>w/2+(x-cx)*k,Y=y=>w/2+(y-cy)*k;mmv={cx,cy,k};mc.clearRect(0,0,w,w);mc.lineWidth=1;
+ if(LIM){mc.strokeStyle='#d64545';mc.strokeRect(X(-LIM.w/2),Y(-LIM.h/2),LIM.w*k,LIM.h*k)}
+ for(let a=Math.floor((cx-R)/CS);a<=Math.floor((cx+R)/CS);a++)for(let b=Math.floor((cy-R)/CS);b<=Math.floor((cy+R)/CS);b++){
+  for(let t=0;t<3;t++){const d=dep(a,b,t);if(d&&(d.mon?!d.found:d.amt>0)){mc.fillStyle=d.mon?'#8c64dc':d.res?RES[d.res]||'#999':'#c9a227';mc.fillRect(X(d.x)-1.5,Y(d.y)-1.5,3,3)}}
+  const q=fbase(a,b);if(q){mc.fillStyle=q.f.col;mc.beginPath();mc.arc(X(q.x),Y(q.y),q.f.tr=='h'?4:3,0,6.283);mc.fill();if(q.f.tr=='h'){mc.strokeStyle='#d64545';mc.stroke()}}}
+ for(const d of ED)if(d.mon||d.amt>0){mc.fillStyle=d.mon?'#8c64dc':RES[d.res]||'#c9a227';mc.fillRect(X(d.x)-1.5,Y(d.y)-1.5,3,3)}
+ for(const n of N.values()){mc.fillStyle=n.type=='core'?'#3b82c4':KC[M[n.type].k];const z=n.type=='core'?5:2;mc.fillRect(X(n.x)-z/2,Y(n.y)-z/2,z,z)}
+ mc.fillStyle='#ff4d4d';for(const e of enemies)mc.fillRect(X(e.x)-1,Y(e.y)-1,2,2);
+ mc.strokeStyle='#2aa198';mc.strokeRect(X(wx(0)),Y(wy(0)),W/cam.z*k,H/cam.z*k)}
+function locator(){if(!SET.loc||(over&&!ed))return;const c=CORE();if(!c)return;const x=sx(c.x),y=sy(c.y),m=28;if(x>m&&x<W-m&&y>m&&y<H-m)return;
+ const a=Math.atan2(y-H/2,x-W/2),dx=Math.cos(a),dy=Math.sin(a),t=Math.min((W/2-m)/(Math.abs(dx)||1e-9),(H/2-m)/(Math.abs(dy)||1e-9)),px=W/2+dx*t,py=H/2+dy*t;
+ g.save();g.translate(px,py);g.rotate(a);g.fillStyle='#3b82c4';g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.moveTo(14,0);g.lineTo(-8,-9);g.lineTo(-8,9);g.closePath();g.fill();g.stroke();g.restore();
+ g.font='bold 12px sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=3;g.strokeStyle='#10181d';g.fillStyle='#fff';const l='Core '+Math.round(Math.hypot(c.x-cam.x,c.y-cam.y))+'m (H)';g.strokeText(l,px-dx*40,py-dy*22);g.fillText(l,px-dx*40,py-dy*22)}
+// help encyclopedia
+const BN={core:'The heart of your colony. All resources are stored here and every unit starts here. If it falls the game is over.',platform:'A sturdy junction for extending the network and branching roads.',road:'Cheap connector node. Units walk along the links between nodes.',fast:'Upgrades a link (not a node): units cross it twice as fast. Click a road segment with this tool.',power:'Powers up to 5 powered buildings while batteries last. Burns 1 battery per station every 20 s.',windmill:'Generates batteries by itself, keeping Power Stations alive.',altar:'Burns meat to bless the colony: each active altar speeds production by 25% (max 3).',cargo:'Lets the drones from Drone Assemblers join your workforce as fast couriers.',biobait:'Decoy. Enemies prize it, so it draws raiders away from vital buildings.',motivator:'Boosts everything within 160. Hover it and press G to switch mode: Production (buildings work 50% faster), Carry (units walk faster), Defense (turrets and lasers fire faster).',factory:'Makes pearl and junk. Pauses when junk is full; Junkyards raise the limit.',mine:'Must sit on a deposit. Digs up its resource until the deposit runs dry.',farm:'Raises meat.',grinder:'Turns meat and metal into food.',lab:'Turns food and pearl into gum.',bombw:'Makes bombs from metal and bone for Airports. Explodes when destroyed, hurting neighbours.',drone:'Builds drones, fast units that need a Cargo Station.',smelter:'Forges gears from metal and bone.',palace:'Consumes gum to earn tribute. If it starves it eats a unit.',house:'Consumes food to create a new unit (cap 40). Can only be destroyed by bombs once it is 10 s old.',junkyard:'Raises the junk limit so Factories keep running.',turret:'Shoots enemies in range with delivered ammo. Needs an operator.',laser:'Powered, ammo-free weapon with long reach. Needs power and an operator.',ammo:'Turns metal into ammunition for turrets.',biorx:'Sacrifices a unit for meat and bone. Only works with more than 3 units.',garb:'Turns junk into gears.',sci:'Lets you research upgrades and unlock buildings (press T).',airport:'Drops bombs on enemy groups every 12 s.',recycler:'Turns junk back into metal. Powered.',mint:'Presses metal and pearl into coins. Powered.',transmitter:'Passive. Contact range with friendly and neutral bases grows to 220 and their gifts arrive twice as often.',eatery:'Turns food into snacks. Cottages can only be built within 160 of an Eatery.',cottage:'Eats snacks to create a new unit (cap 40). Needs a nearby Eatery.',deprob:'Sacrifices itself to destroy the strongest tough enemy (Brute) within 260.',pacifier:'Burns pills to lower the euphoria of friendly bases within 200. At full euphoria a friendly base sends candy instead of its usual gift.',softener:'Turns candy into 2 random minerals (metal, pearl, meat, bone, gum or gear).',repair:'Heals every node in range while powered.',wall:'Cheap, tough decoy. Put it on the perimeter to soak up damage.'};
+const SYS=[['Basics','Welcome','<p>Nodefield is an economy-and-defense game on an infinite map. You grow a network of nodes outward from your Core. Units haul resources along the links, production buildings turn them into new materials, and every few minutes raiders attack. Expand, keep the economy ahead of the raids, and protect your Core.</p>'],
+['Basics','Building rules','<ul><li>A new node must be within 110 of an existing node and at least 26 from any other.</li><li>Placing creates a <b>blueprint</b>; a Construction unit pays the cost and builds it in about 3 s.</li><li>Mines must sit on a deposit and each deposit hosts one mine.</li><li>Hover a node and press <b>X</b> to destroy it (Houses and Palaces only by bombs after 10 s).</li><li>On limited maps you cannot build outside the border.</li></ul>'],
+['Basics','Units and roles','<p>Units have four roles, set with the +/− panel or the Auto button:</p><ul><li><b>Transport</b> carries resources between the Core, producers and consumers.</li><li><b>Production</b> operates powered buildings, turrets, lasers and palaces.</li><li><b>Construction</b> builds blueprints.</li><li><b>Defense</b> fights enemies directly.</li></ul><p>New units come from Houses, monuments, friendly factions and drones.</p>'],
+['Basics','Power','<p>Powered buildings need a Power Station slot. Each station powers 5 buildings but only while the Core holds batteries; every 20 s each station burns 1 battery. Windmills make batteries. A red outline on a node means it has no power.</p>'],
+['Basics','Economy chains','<ul><li>Mine → metal · Factory → pearl (+junk) · Farm → meat</li><li>Meat Grinder: meat + metal → food</li><li>Laboratory: food + pearl → gum</li><li>Smeltery: metal + bone → gear · Eatery: food → snack · Science Center: research (T)</li><li>Ammunition: metal → ammo · Bomb Workshop: metal + bone → bomb</li><li>Garbage Factory: junk → gear · Recycler: junk → metal</li><li>Minting Factory: metal + pearl → coin</li><li>Friendly bases at full euphoria give candy · Pacifier (pill) lowers euphoria · Softener (candy) slows raiders</li></ul>'],
+['Systems','Raids and timing','<p>Raids come in waves. Size grows with the wave number and difficulty, enemy health grows 5% per wave, and tougher enemy types unlock later. You get a warning 10 s before each wave. Every raid you fully repel adds 10 s to the gap before the next one, up to a maximum of 5 minutes. Groups can come from a random direction or from a hostile faction base near your network.</p><p><b>Raid timing</b> (Settings) adds or removes seconds between raids in every mode. Skirmish difficulty adds its own: Easy +60 s, Hard −10 s, Brutal −20 s. The minimum gap is 15 s.</p>'],
+['Systems','Game modes','<ul><li><b>Campaign</b> '+LV.length+' goal-based levels: '+LV.map(l=>l.n+' ('+l.g+')').join('; ')+'.</li><li><b>Sandbox</b> starts with 300 of everything.</li><li><b>Skirmish</b> adjustable difficulty, raid sizes, deposit frequency, raid timing and map size.</li><li><b>Map editor</b> make and play your own maps.</li></ul>'],
+['Systems','Deposits and monuments','<p>Gold rings are deposits; mines extract from them. Purple diamonds (or custom shapes) are monuments: build within 60 of one to discover it for a reward of units and resources.</p>'],
+['Systems','Limited maps','<p>Maps can be Infinite or limited (Tiny, Small, Medium, Large). A limited map has a dashed red border: you cannot build outside it, deposits stay inside, and raids spawn at its edge.</p>'],
+['Factions','How factions work','<p>Faction bases are scattered across the map, drawn as a coloured shape with a name. There are <b>50 official factions</b> plus endless <b>procedural</b> ones with generated names.</p><ul><li><b>Friendly</b> (hexagon): build within 80 of a base to make contact. They send 3 units and then regular gifts that grow each wave.</li><li><b>Neutral</b> (square): trade only, with smaller gifts.</li><li><b>Hostile</b> (triangle): expanding near them provokes an immediate raid, and later raids may start from their base with their colour on the raiders.</li></ul>'],
+['Controls','Navigation','<p>The <b>minimap</b> shows nodes, deposits, monuments, factions and enemies; click or drag it to move the camera. If your Core goes off screen a <b>locator arrow</b> points back to it, and <b>H</b> or the ⌂ button jumps home. Zoom with the wheel or the + / − buttons (zooming out has no limit). Zoomed out far enough, a <b>political map</b> shows faction territories and your colony. <b>V</b> or the 🗺 button fits the whole map on screen; press it again to return. Both can be turned off in Settings.</p>'],
+['Controls','Editors','<p>The <b>Map Editor</b> places deposits and monuments, sets map size and procedural deposits, and saves maps. The <b>Resource &amp; Monument Editor</b> creates custom resources and monuments with a shape or emoji, name (emoji allowed), colour and rewards.</p>'],
+['Controls','Keybinds','<table class="kt">'+KEYS.map(k=>`<tr><td>${k[0]}</td><td>${k[1]}</td></tr>`).join('')+'</table>']];
+function helpData(){const A=SYS.map(a=>({c:a[0],t:a[1],h:a[2]})),rl=o=>Object.keys(o||{}).map(k=>o[k]+' '+rname(k)).join(', ')||'—',tr=(a,b)=>b?`<tr><td>${a}</td><td>${b}</td></tr>`:'';
+ for(const k of Object.keys(M)){const d=M[k];A.push({c:'Buildings',t:d.n,h:`<p>${BN[k]||''}</p><table class="kt">`+tr('Category',KN[d.k]||'Special')+tr('Cost',d.c?rl(d.c):'')+tr('Power',d.pw?'Needs a powered slot':'')+tr('Cycle',d.t?d.t+' s':'')+tr('Consumes',d.i?rl(d.i)+' per cycle':'')+tr('Produces',d.o&&Object.keys(d.o).length?rl(d.o)+' per cycle':'')+tr('Range',d.rg||'')+tr('Health',d.hp||'')+'</table>'})}
+ for(const r of Object.keys(RES)){const L=f=>Object.keys(M).filter(k=>M[k][f]&&M[k][f][r]).map(k=>M[k].n).join(', ')||'—';A.push({c:'Resources',t:rname(r),h:`<p>${r=='drone'?'A fast courier unit.':RI[r]?'A custom resource.':'A colony resource.'}</p><table class="kt">`+tr('Produced by',L('o')+(r=='metal'?', Mines (any deposit gives its own resource)':''))+tr('Used by',L('i'))+tr('Build cost of',L('c'))+'</table>'})}
+ for(const k of Object.keys(EN)){const e=EN[k];A.push({c:'Enemies',t:e.n,h:`<p>${e.d}.</p><table class="kt">`+tr('Health',e.hp)+tr('Speed',e.spd)+tr('Damage',e.dmg||'explodes')+tr('Appears from wave',e.min)+tr('Range',e.rg||'melee')+'</table>'})}
+ for(const t of['f','n','h'])A.push({c:'Factions',t:{f:'Friendly factions',n:'Neutral factions',h:'Hostile factions'}[t],h:'<table class="kt">'+OFF.filter(o=>o.tr==t).map(o=>`<tr><td>${o.n}</td><td>${t=='h'?'carries':'gifts'} ${rname(o.g)}</td></tr>`).join('')+'</table>'});
+ return A}
+function helpDraw(q){const A=helpData();q=(q||'').toLowerCase();let last='',h='';A.forEach((a,i)=>{if(q&&!(a.t+' '+a.h.replace(/<[^>]+>/g,' ')).toLowerCase().includes(q))return;if(a.c!=last){h+=`<div class="hc">${a.c}</div>`;last=a.c}h+=`<button class="hi" data-i="${i}">${a.t}</button>`});
+ HA=A;$('hs').innerHTML=h||'<p>No results</p>';const f=$('hs').querySelector('.hi');if(f)showHelp(+f.dataset.i);else $('ha').innerHTML=''}
+function showHelp(i){const a=HA[i];$('ha').innerHTML='<h3>'+a.t+'</h3>'+a.h;document.querySelectorAll('.hi').forEach(b=>b.classList.toggle('on',+b.dataset.i==i))}
+$('help').innerHTML='<h2 style="margin:0;display:inline">Encyclopedia</h2> <button class="cl" style="float:right">Close</button><div style="margin-top:8px"><input id="hq" type="text" placeholder="Search buildings, resources, enemies, factions…"></div><div id="hbody"><div id="hs"></div><div id="ha"></div></div>';
+$('hq').oninput=()=>helpDraw($('hq').value);$('help').onclick=e=>{const b=e.target.closest('.hi');if(b)showHelp(+b.dataset.i)};
+const mb=$('mb'),mq=mb.getContext('2d'),mp=Array.from({length:46},()=>({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.012,vy:(Math.random()-.5)*.012,k:Math.floor(Math.random()*3),r:2+Math.random()*3}));let mT=0,mLast=performance.now();
+function menuBg(t){requestAnimationFrame(menuBg);const dt=Math.min(.05,(t-mLast)/1000);mLast=t;const on=['menu','skm','hub','rme'].some(vis)||ctx=='menu'&&['set','help','keys'].some(vis);$('mbg').style.display=on?'block':'none';if(!on)return;
+ const w=mb.clientWidth,h=mb.clientHeight,d=devicePixelRatio||1;if(mb.width!=w*d||mb.height!=h*d){mb.width=w*d;mb.height=h*d}
+ mq.setTransform(d,0,0,d,0,0);mq.clearRect(0,0,w,h);mT+=dt;mq.lineWidth=1.5;
+ for(const p of mp){p.x+=p.vx*dt*10;p.y+=p.vy*dt*10;if(p.x<0||p.x>1)p.vx*=-1;if(p.y<0||p.y>1)p.vy*=-1}
+ for(let i=0;i<mp.length;i++)for(let j=i+1;j<mp.length;j++){const a=mp[i],b=mp[j],e=Math.hypot((a.x-b.x)*w,(a.y-b.y)*h);if(e<170){mq.strokeStyle='rgba(111,138,153,'+.45*(1-e/170)+')';mq.beginPath();mq.moveTo(a.x*w,a.y*h);mq.lineTo(b.x*w,b.y*h);mq.stroke();
+  if((i+j)%5==0){const q=(mT*.25+i*.13)%1;mq.fillStyle=KC[(i+j)%3];mq.beginPath();mq.arc((a.x+(b.x-a.x)*q)*w,(a.y+(b.y-a.y)*q)*h,2.2,0,6.283);mq.fill()}}}
+ for(const p of mp){mq.fillStyle=KC[p.k];mq.beginPath();mq.arc(p.x*w,p.y*h,p.r,0,6.283);mq.fill()}}
+requestAnimationFrame(menuBg);
+$('spd').insertAdjacentHTML('afterbegin','<button id="bi" title="Inventory (I)">📦</button><button id="bt" title="Research (T)">🔬</button>');
+$('app').insertAdjacentHTML('beforeend','<div class="ov" id="inv" style="min-width:min(520px,94vw);text-align:left"></div><div class="ov" id="tch" style="width:min(520px,94vw);text-align:left"></div><div class="ov" id="dir" style="width:min(560px,94vw);text-align:left;max-height:80vh;overflow:auto"></div><div class="ov" id="inf" style="width:min(460px,94vw);text-align:left;max-height:80vh;overflow:auto"></div>');
+const tg=id=>{const e=$(id),o=e.style.display=='block';$('inv').style.display=$('tch').style.display=$('dir').style.display=$('inf').style.display='none';if(!o){e.style.display='block';({inv:invDraw,tch:tchDraw,dir:dirDraw,inf:infDraw})[id]()}};
+function rates(){const P={},U={},b=BST(),m=bmOf();for(const n of N.values()){if(n.bp)continue;const d=dd(n);if(!d.t||(d.pw&&!n.pwd)||(d.dep&&n.dep&&n.dep.amt<=0))continue;const bt=btz(d),c=d.fx=='pal'?1/d.t:b/(d.t*bt);for(const k in d.i)U[k]=(U[k]||0)+d.i[k]*bt*c;for(const k in d.o){const r=d.dep&&n.dep&&n.dep.res||k;P[r]=(P[r]||0)+(d.o[k]*bt+(bt>1?exOf():0))*c}}U.battery=(U.battery||0)+cnt('power')/20;return{P,U}}
+function invDraw(){const{P,U}=rates(),ks=Object.keys(RES).filter(k=>Math.floor(S[k]||0)>0||P[k]||U[k]);
+$('inv').innerHTML='<h2>Inventory</h2><table class="kt" style="width:100%"><tr><th></th><th>Stock</th><th>+/s</th><th>−/s</th><th>Net/s</th><th></th></tr>'+ks.map(k=>{const p=P[k]||0,u=U[k]||0,n=p-u,st=n>.005?'excess':n<-.005?'shortage':'balanced',col=n>.005?'#58c46b':n<-.005?'#d64545':'inherit',eta=n<-.005?' · empty in '+Math.round((S[k]||0)/-n)+'s':'';return`<tr><td>${ri(k)}${rname(k)}</td><td>${Math.floor(S[k]||0)}</td><td>${p.toFixed(2)}</td><td>${u.toFixed(2)}</td><td style="color:${col}">${n>0?'+':''}${n.toFixed(2)}</td><td style="color:${col}">${st}${eta}</td></tr>`}).join('')+'</table><p style="opacity:.7;max-width:480px">Rates are for powered, fueled buildings and include boosts (altars, Production and Burst research). Press I to close.</p><p><button id="invx">Close</button></p>';$('invx').onclick=()=>tg('inv')}
+function tchDraw(){const has=cnt('sci')>0;$('tch').innerHTML='<h2>Research</h2><p style="opacity:.7">'+(has?'Spend resources to unlock buildings and upgrades.':'Build a Science Center to research.')+'</p>'+Object.keys(TECH).map(id=>{const t=TECH[id],done=RS[id],rq=t.req&&!RS[t.req],can=has&&!done&&!rq&&Object.keys(t.c).every(r=>(S[r]||0)>=t.c[r]);return`<div class="ri"><span><b>${t.n}</b> <small>${t.d}</small><br><small>${Object.keys(t.c).map(r=>t.c[r]+' '+rname(r)).join(', ')}${rq?' · needs '+TECH[t.req].n:''}</small></span><button data-r="${id}" class="${can?'':'no'}">${done?'Done':'Research'}</button></div>`}).join('')+'<p><button id="tchx">Close</button></p>'}
+$('tch').onclick=e=>{if(e.target.id=='tchx')return tg('tch');const b=e.target.closest('[data-r]');if(!b)return;const id=b.dataset.r,t=TECH[id];if(RS[id]||!cnt('sci')||(t.req&&!RS[t.req])||!Object.keys(t.c).every(r=>(S[r]||0)>=t.c[r]))return;for(const r in t.c)S[r]-=t.c[r];RS[id]=1;flash('Researched '+t.n);tabs();tchDraw()};
+$('bi').onclick=()=>tg('inv');$('bt').onclick=()=>tg('tch');
+addEventListener('keydown',e=>{if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)||$('menu').style.display=='block')return;const k=e.key.toLowerCase();if(k=='g'&&!over){const mx=wx(mouse.x),my=wy(mouse.y);for(const o of N.values())if(o.type=='motivator'&&Math.hypot(o.x-mx,o.y-my)<14){o.md=((o.md||0)+1)%3;flash('Motivator mode: '+['Production','Carry','Defense'][o.md]);break}}if(k=='v')mapView();if(k=='+'||k=='=')zoomBy(1.25);if(k=='-'||k=='_')zoomBy(.8);if(e.key=='!')tg('dir');if(k=='u')SHU=!SHU;if(k=='y'&&!over){const mx=wx(mouse.x),my=wy(mouse.y);for(const o of N.values())if(RC[o.type]&&RC[o.type].length&&Math.hypot(o.x-mx,o.y-my)<14){o.rc=((o.rc||0)+1)%(RC[o.type].length+1);o.buf={};flash(M[o.type].n+' recipe: '+(o.rc?RC[o.type][o.rc-1].name:'Default'));break}}if(k=='i')tg('inv');if(k=='t')tg('tch')});
+setInterval(()=>{if($('inv').style.display=='block')invDraw();if($('dir').style.display=='block')dirDraw();if($('inf').style.display=='block')infDraw()},500);
+$('modes').insertAdjacentHTML('afterbegin','<div id="vac" style="font-weight:bold" title="Unemployed units. Job sliders only take from here">Idle (unemployed): <b id="vacn">0</b></div>');
+let vacA=0;
+$('spd').insertAdjacentHTML('afterbegin','<button id="bzi" title="Zoom in (+)">+</button><button id="bzo" title="Zoom out (−)">−</button><button id="bmv" title="Map view (V)">🗺</button>');
+const zoomBy=f=>{cam.z=Math.max(1e-5,Math.min(2.5,cam.z*f))};$('bzi').onclick=()=>zoomBy(1.25);$('bzo').onclick=()=>zoomBy(.8);$('bmv').onclick=()=>mapView();
+let mvPrev=null;
+function mapView(){if(mvPrev){cam.x=mvPrev.x;cam.y=mvPrev.y;cam.z=mvPrev.z;mvPrev=null;flash('Back to normal view');return}if(!N.size)return;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+ if(LIM){x0=-LIM.w/2;x1=LIM.w/2;y0=-LIM.h/2;y1=LIM.h/2}else{for(const n of N.values()){x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)}x0-=900;x1+=900;y0-=900;y1+=900}
+ const bw=Math.max(1200,x1-x0),bh=Math.max(800,y1-y0);mvPrev={x:cam.x,y:cam.y,z:cam.z};cam.x=(x0+x1)/2;cam.y=(y0+y1)/2;cam.z=Math.min(2.5,Math.min(W/bw,H/bh)*.9);flash('Map view: press V to return')}
+function drawPol(){const z=cam.z,pa=Math.max(0,Math.min(1,(.4-z)/.25));if(pa<=0)return;const c0=Math.floor(cam.x/CS),r0=Math.floor(cam.y/CS),R=40,TC={f:'#58c46b',n:'#9aa7ad',h:'#d64545'};
+ g.save();g.globalAlpha=pa*.3;g.fillStyle='#3b82c4';for(const n of N.values()){g.beginPath();g.arc(sx(n.x),sy(n.y),Math.max(3,LR*z),0,6.283);g.fill()}
+ g.lineWidth=1.5;g.font='11px sans-serif';g.textAlign='center';g.textBaseline='middle';
+ for(let cx=c0-R;cx<=c0+R;cx++)for(let cy=r0-R;cy<=r0+R;cy++){const b=fbase(cx,cy);if(b){const F=b.f,X=sx(b.x),Y=sy(b.y);if(X>-200&&X<W+200&&Y>-200&&Y<H+200){const rr=Math.max(4,170*z);g.globalAlpha=pa*.28;g.fillStyle=F.col;g.beginPath();g.arc(X,Y,rr,0,6.283);g.fill();g.globalAlpha=pa;g.strokeStyle=TC[F.tr];g.stroke();if(z>.015){g.fillStyle='#8a99a3';g.fillText(F.n,X,Y+rr+8)}}}
+  if(z<.12){g.globalAlpha=pa;for(let k=0;k<3;k++){const d=dep(cx,cy,k);if(d&&(d.mon?!d.found:d.amt>0)){g.fillStyle=d.mon?'#8c64dc':'#c9a227';g.fillRect(sx(d.x)-1.5,sy(d.y)-1.5,3,3)}}}}
+ const c=CORE();g.globalAlpha=pa;if(c){g.fillStyle='#3b82c4';g.fillText('Your colony',sx(c.x),sy(c.y)-Math.max(12,LR*z)-4)}
+ g.fillStyle='#8a99a3';g.textAlign='left';g.fillText('Political map · green friendly · gray neutral · red hostile · blue you',12,H-14);g.restore()}
+let SHU=0,selN=null,rtMax=1,rtPrev=0;const MC={'-1':'#8a8f94',0:'#3b82f6',1:'#58c46b',2:'#e8a13a',3:'#d64545'};
+function rgM(){return (RS.range?1.25:1)*(RS.range2?1.25:1)}
+function drawRange(){const n=N.get(selN);if(!n)return;const d=M[n.type];if(!d.rg||!(d.fx=='turret'||d.fx=='laser'))return;g.save();g.beginPath();g.arc(sx(n.x),sy(n.y),d.rg*rgM()*cam.z,0,6.283);g.fillStyle='rgba(214,69,69,.10)';g.fill();g.strokeStyle='rgba(214,69,69,.7)';g.lineWidth=1.5;g.setLineDash([6,4]);g.stroke();g.restore()}
+addEventListener('click',e=>{if(e.target.tagName!='CANVAS'||tool)return;const mx=wx(mouse.x),my=wy(mouse.y);let b=null;for(const o of N.values())if(Math.hypot(o.x-mx,o.y-my)<16){b=o;break}selN=b?b.id:null});
+document.body.insertAdjacentHTML('beforeend','<div id="rtab" style="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(20,26,32,.9);color:#dde3e8;padding:6px 10px;border-radius:8px;display:flex;align-items:center;gap:8px;min-width:270px"><button id="rtp" title="Pause / unpause">⏸</button><div style="flex:1"><div id="rtt" style="font-size:12px"></div><div style="height:6px;background:rgba(128,128,128,.35);border-radius:3px;overflow:hidden"><div id="rtb" style="height:100%;width:0"></div></div></div><button id="rts" title="Start the next raid now">⏭</button><button id="rti" title="Colony info">𝐢</button><button id="rtu" title="Highlight every unit (U)">👥</button></div>');
+(()=>{const el=$('rtab');try{const p=JSON.parse(localStorage.getItem('nf-rtab'));if(p){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.transform='none'}}catch(e){}
+let d=null;el.style.cursor='move';el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=el.getBoundingClientRect();d={x:e.clientX-r.left,y:e.clientY-r.top};el.setPointerCapture(e.pointerId);e.preventDefault()});
+el.addEventListener('pointermove',e=>{if(!d)return;el.style.left=Math.max(0,Math.min(innerWidth-el.offsetWidth,e.clientX-d.x))+'px';el.style.top=Math.max(0,Math.min(innerHeight-el.offsetHeight,e.clientY-d.y))+'px';el.style.transform='none'});
+el.addEventListener('pointerup',()=>{if(!d)return;d=null;try{localStorage.setItem('nf-rtab',JSON.stringify({x:parseFloat(el.style.left),y:parseFloat(el.style.top)}))}catch(e){}})})();
+$('rtp').onclick=()=>pause();$('rti').onclick=()=>tg('inf');$('rtu').onclick=()=>{SHU=!SHU};
+$('rts').onclick=()=>{if(over||!N.size)return;if(nextWave>1e8)return flash('This level has no raids');nextWave=0};
+setInterval(()=>{const hide=over||$('menu').style.display=='block';$('rtab').style.display=hide?'none':'flex';if(hide)return;if(nextWave>rtMax||nextWave>rtPrev+.5)rtMax=Math.max(1,nextWave);rtPrev=nextWave;const f=nextWave>1e8?0:Math.max(0,Math.min(1,1-nextWave/rtMax)),t=Math.max(0,Math.ceil(nextWave));$('rtb').style.width=f*100+'%';$('rtb').style.background=SET.rbc||'#8b5a2b';$('rtt').textContent=(nextWave>1e8?'No raids in this level':'Raid in '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0'))+(enemies.length?' · raid in progress':'');$('rtp').textContent=paused?'▶':'⏸'},150);
+function infDraw(){const ws=workers.filter(w=>!w.dr),n=ws.length,C=[['Transport',0],['Production',1],['Construction',2],['Defense',3],['Idle',-1]],cn=m=>ws.filter(w=>w.mode==m).length;
+$('inf').innerHTML='<h2>Colony info</h2><p>Unemployment: <b>'+(n?Math.round(cn(-1)/n*100):0)+'%</b> ('+cn(-1)+' of '+n+' units idle)</p><div style="display:flex;height:16px;border-radius:4px;overflow:hidden;background:#333">'+C.map(c=>'<div style="width:'+(n?cn(c[1])/n*100:0)+'%;background:'+MC[c[1]]+'"></div>').join('')+'</div><p style="margin:4px 0">'+C.map(c=>'<span style="color:'+MC[c[1]]+'">●</span> '+c[0]+' '+cn(c[1])).join(' · ')+'</p><h3>Items</h3><table class="kt" style="width:100%">'+Object.keys(RES).map(k=>'<tr><td>'+ri(k)+rname(k)+'</td><td>'+Math.floor(S[k]||0)+'</td></tr>').join('')+'</table><p><button id="infx">Close</button></p>';$('infx').onclick=()=>tg('inf')}
+let redit2=null,RWN={};
+function regAllTech(){for(const k in LKM)if(!TECH[LKM[k]]||TECH[LKM[k]].custom)delete LKM[k];for(const k of Object.keys(TECH))if(TECH[k].custom)delete TECH[k];for(const t of CT){TECH[t.id]=t;for(const u of t.u)LKM[u]=t.id}for(const t of CT)if(t.req&&!TECH[t.req])t.req=''}
+function techForm(){const v=CT.find(t=>t.id==redit2)||{},mods=Object.keys(M).filter(k=>k!='core'&&M[k].c&&!(LKM[k]&&TECH[LKM[k]]&&!TECH[LKM[k]].custom));
+ $('rf').innerHTML='<label>Name <input id="tfn" type="text" maxlength="24" value="'+(v.n||'')+'"></label><label>Description <input id="tfd" type="text" maxlength="60" value="'+(v.d||'')+'"></label><label>Requires <select id="tfr"><option value="">nothing</option>'+Object.keys(TECH).filter(k=>k!=v.id).map(k=>'<option value="'+k+'"'+(v.req==k?' selected':'')+'>'+TECH[k].n+'</option>').join('')+'</select></label>'+rows('tc',v.c,'Cost')+'<div><b>Unlocks (modules locked until researched)</b><div style="max-height:130px;overflow:auto">'+mods.map(k=>'<label><input type="checkbox" class="tfu" value="'+k+'"'+((v.u||[]).includes(k)?' checked':'')+'> '+M[k].n+'</label>').join('')+'</div></div><p><button id="tok">'+(v.id?'Update':'Add research')+'</button>'+(v.id?' <button id="tcl">Cancel</button>':'')+'</p>';
+ $('rl').innerHTML=CT.length?CT.map(t=>'<div class="ri">'+t.n+'<button data-e3="'+t.id+'">Edit</button><button data-d3="'+t.id+'">Delete</button></div>').join(''):'<p style="opacity:.7">No custom research yet</p>'}
+function saveTech(){const n=clean($('tfn').value);if(!n)return rmsg('Enter a name');const c=rrd('tc');if(!Object.keys(c).length)return rmsg('Add at least one cost resource');
+ if(Object.keys(TECH).some(k=>k!=redit2&&TECH[k].n.toLowerCase()==n.toLowerCase()))return rmsg('That research name is taken');
+ const t={id:redit2,n,d:clean($('tfd').value)||'Custom research',req:$('tfr').value||'',c,u:[...document.querySelectorAll('.tfu:checked')].map(e=>e.value),custom:1};
+ if(!t.id){const b='ct_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'_');t.id=b;let i=2;while(TECH[t.id])t.id=b+i++;CT.push(t)}else CT[CT.findIndex(x=>x.id==t.id)]=t;
+ regAllTech();saveCustom();redit2=null;rmeDraw();rmsg('Saved '+n)}
+function dd(n){const d=M[n.type],a=RC[n.type];if(!a||(!n.rc&&n.rc2==null))return d;const R=k=>k?a[k-1]:{i:d.i,o:d.o,t:d.t},r1=R(n.rc||0);if(!r1)return d;let r=r1;
+ if(n.rc2!=null&&motNear(n)&&n.rc2!=(n.rc||0)){const r2=R(n.rc2);if(r2){const m=(x,y)=>{const o=Object.assign({},x);for(const k in y)o[k]=(o[k]||0)+y[k];return o};r={i:m(r1.i||{},r2.i||{}),o:m(r1.o||{},r2.o||{}),t:Math.max(r1.t||0,r2.t||0)}}}
+ return Object.assign({},d,{i:r.i,o:r.o,t:r.t})}
+function regMod(m){M[m.id]={n:m.name,k:m.k,c:Object.keys(m.c||{}).length?m.c:{metal:5},pw:m.pw?1:0,t:m.t,i:m.i,o:m.o,cm:1}}
+const recMods=()=>Object.keys(M).filter(k=>M[k].t&&M[k].o&&Object.keys(M[k].o).length&&!M[k].dep&&!M[k].dir&&!M[k].fx);
+function rowsIn(p,obj){const e=Object.entries(obj||{}),n=Math.max(RWN[p]||1,e.length,1);RWN[p]=n;let h='';for(let k=0;k<n;k++){const a=e[k]||['',1];h+='<div class="ri"><select id="'+p+'r'+k+'"><option value="">none</option>'+Object.keys(RES).filter(x=>x!='drone').map(x=>'<option value="'+x+'"'+(x==a[0]?' selected':'')+'>'+rname(x)+'</option>').join('')+'</select><input id="'+p+'a'+k+'" type="number" min="1" value="'+a[1]+'" style="width:60px"></div>'}return h}
+const rows=(p,obj,l)=>'<div><b>'+l+'</b><div id="w_'+p+'">'+rowsIn(p,obj)+'</div><button data-add="'+p+'">+ resource</button></div>';
+function rrd(p){const o={},n=RWN[p]||1;for(let k=0;k<n;k++){const el=$(p+'r'+k);if(el&&el.value)o[el.value]=(o[el.value]||0)+Math.max(1,+$(p+'a'+k).value||1)}return o}
+function modForm(){const v=CMOD.find(m=>m.id==redit2)||{};$('rf').innerHTML='<label>Name <input id="mfn" type="text" maxlength="24" value="'+(v.name||'')+'"></label><label>Tab <select id="mfk">'+KN.map((t,i)=>'<option value="'+i+'"'+((v.k==null?1:v.k)==i?' selected':'')+'>'+t+'</option>').join('')+'</select></label><label>Needs power <input id="mfp" type="checkbox"'+(v.pw?' checked':'')+'></label><label>Cycle time (s) <input id="mft" type="number" min="1" value="'+(v.t||8)+'"></label>'+rows('mi',v.i,'Needs (optional)')+rows('mo',v.o,'Makes')+rows('mc',v.c,'Build cost (optional, default 5 metal)')+'<p><button id="mok">'+(v.id?'Update':'Add module')+'</button>'+(v.id?' <button id="mcl">Cancel</button>':'')+'</p>';
+ $('rl').innerHTML=CMOD.length?CMOD.map(m=>'<div class="ri">'+m.name+'<button data-e2="'+m.id+'">Edit</button><button data-d2="'+m.id+'">Delete</button></div>').join(''):'<p style="opacity:.7">No custom modules yet</p>'}
+function saveMod(){const n=clean($('mfn').value);if(!n)return rmsg('Enter a name');const o=rrd('mo');if(!Object.keys(o).length)return rmsg('Add at least one output');
+ if(CMOD.some(m=>m.id!=redit2&&m.name.toLowerCase()==n.toLowerCase())||Object.keys(M).some(k=>!M[k].cm&&M[k].n.toLowerCase()==n.toLowerCase()))return rmsg('That module name is taken');
+ const m={id:redit2,name:n,k:+$('mfk').value,pw:$('mfp').checked,t:Math.max(1,+$('mft').value||8),i:rrd('mi'),o,c:rrd('mc')};
+ if(!m.id){const b='c_'+n.toLowerCase().replace(/[^a-z0-9]+/g,'_');m.id=b;let i=2;while(M[m.id])m.id=b+i++;CMOD.push(m)}else CMOD[CMOD.findIndex(x=>x.id==m.id)]=m;
+ regMod(m);saveCustom();redit2=null;rmeDraw();rmsg('Saved '+n)}
+function recForm(){$('rf').innerHTML='<p style="opacity:.7">Adds an extra recipe option to a module. A module\'s original recipe is never changed. In game, hover a building and press Y to switch recipes.</p><label>Module <select id="rcmod">'+recMods().map(k=>'<option value="'+k+'">'+M[k].n+'</option>').join('')+'</select></label><label>Recipe name <input id="rcn" type="text" maxlength="24"></label><label>Cycle time (s) <input id="rct" type="number" min="1" value="8"></label>'+rows('ri',null,'Needs (optional)')+rows('ro',null,'Makes')+'<p><button id="rcok">Add recipe</button></p>';
+ const L=[];for(const k in RC)RC[k].forEach((r,j)=>L.push([k,j,r]));$('rl').innerHTML=L.length?L.map(a=>'<div class="ri">'+(M[a[0]]?M[a[0]].n:a[0])+': '+a[2].name+'<button data-d2="'+a[0]+'|'+a[1]+'">Delete</button></div>').join(''):'<p style="opacity:.7">No extra recipes yet</p>'}
+function saveRec(){const k=$('rcmod').value,o=rrd('ro');if(!k||!Object.keys(o).length)return rmsg('Pick a module and add an output');const a=RC[k]=RC[k]||[];a.push({name:clean($('rcn').value)||'Recipe '+(a.length+2),i:rrd('ri'),o,t:Math.max(1,+$('rct').value||8)});saveCustom();rmeDraw();rmsg('Recipe added')}
+function resRecForm(){const id=redit,ex=id?Object.keys(RC).map(m=>[m,RC[m].find(r=>r.src==id)]).find(a=>a[1]):null,v=ex?ex[1]:{};$('fp').parentElement.insertAdjacentHTML('beforebegin','<h4>Recipe (optional)</h4><label>Made by <select id="rcm"><option value="">no recipe</option>'+recMods().map(k=>'<option value="'+k+'"'+(ex&&ex[0]==k?' selected':'')+'>'+M[k].n+'</option>').join('')+'</select></label>'+rows('ri',v.i,'Needs')+'<label>Amount made <input id="rca" type="number" min="1" value="'+(v.o?Object.values(v.o)[0]:1)+'"></label><label>Cycle time (s) <input id="rct" type="number" min="1" value="'+(v.t||8)+'"></label>')}
+function rmeDraw(){RWN={};if(!$('rt2'))$('rt1').insertAdjacentHTML('afterend','<button id="rt2">Modules</button><button id="rt3">Recipes</button><button id="rt4">Research</button>');
+ if(rtab<2){rmeDraw0();$('rt2').classList.remove('on');$('rt3').classList.remove('on');$('rt4').classList.remove('on');if(rtab==0)resRecForm();return}
+ [0,1,2,3,4].forEach(i=>$('rt'+i).classList.toggle('on',i==rtab));rtab==2?modForm():rtab==3?recForm():techForm()}
+function rmeSave(){if(rtab==0){const mod=$('rcm')?$('rcm').value:'',ri=rrd('ri'),amt=Math.max(1,+$('rca').value||1),t=Math.max(1,+$('rct').value||8),e0=redit,n0=CR.length;rmeSave0();const id=e0||(CR.length>n0?CR[CR.length-1].id:null);if(id){for(const m in RC)RC[m]=RC[m].filter(r=>r.src!=id);if(mod){const a=RC[mod]=RC[mod]||[];a.push({name:rname(id)+' recipe',i:ri,o:{[id]:amt},t,src:id})}saveCustom()}}else rmeSave0()}
+$('rme').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(/^rt\d$/.test(b.id)){redit2=null;rtab=+b.id[2];rmeDraw()}
+ else if(b.dataset.add){const p=b.dataset.add,o=rrd(p);RWN[p]=(RWN[p]||1)+1;$('w_'+p).innerHTML=rowsIn(p,o)}
+ else if(b.id=='tok')saveTech();else if(b.id=='tcl'){redit2=null;rmeDraw()}else if(b.dataset.e3){redit2=b.dataset.e3;rmeDraw()}else if(b.dataset.d3){CT=CT.filter(t=>t.id!=b.dataset.d3);regAllTech();saveCustom();rmeDraw()}else if(b.id=='mok')saveMod();else if(b.id=='rcok')saveRec();else if(b.id=='mcl'){redit2=null;rmeDraw()}
+ else if(b.dataset.e2){redit2=b.dataset.e2;rmeDraw()}
+ else if(b.dataset.d2){const k=b.dataset.d2;if(k.includes('|')){const a=k.split('|');RC[a[0]].splice(+a[1],1)}else{CMOD=CMOD.filter(m=>m.id!=k);delete M[k];delete RC[k]}saveCustom();rmeDraw()}
+ else if(b.dataset.d&&rtab==0){const k=b.dataset.d;for(const m in RC)RC[m]=RC[m].filter(r=>r.src!=k&&!(k in r.i)&&!(k in r.o));saveCustom()}});
+function DC(){return Object.assign({on:1,a:3,m:55,p:40},SET.dr)}
+function dirLog(t){DR.log=DR.log||[];DR.log.push('['+Math.floor(time/60)+':'+String(Math.floor(time%60)).padStart(2,'0')+'] '+t);if(DR.log.length>40)DR.log.shift()}
+function annihilate(){for(const n of [...N.values()])kill(n);$('ot').textContent='Annihilated';$('sc').textContent='The raiders destroyed everything. You survived '+wave+' waves and downed '+kills+' invaders.'}
+function dirTick(){if(DR.act!=1)return;const C=DC();if(!enemies.length){dirEnd();return}if(!C.on)return;const c=CORE();
+ if(DR.lost>=Math.max(3,.3*DR.n0)||(c&&c.hp<c.max*.3)){DR.act=2;const ea=(wave>=8&&c&&c.hp<c.max*.15)?C.a:0,r=Math.random()*100,w='DEFEAT: '+DR.lost+' buildings lost, core '+(c?Math.round(c.hp/c.max*100):0)+'%. Roll '+Math.round(r)+' (annihilation <'+ea+(ea?'':' [locked: needs wave 8+ and core under 15%]')+', mercy <'+(ea+C.m)+') → ';
+  if(r<ea){dirLog(w+'ANNIHILATION');DR.L=(DR.L||0)+1;annihilate()}
+  else if(r<ea+C.m){dirLog(w+'MERCY, raiders back off');DR.L=(DR.L||0)+1;DR.act=0;enemies.length=0;DR.i=Math.max(.7,DR.i-.1);nextWave=Math.max(nextWave,waveEvery/cfg.rf+30);flash('The raiders show mercy and withdraw...')}
+  else{dirLog(w+'NO MERCY, raiders keep attacking');flash('The raiders press the attack!')}}}
+function dirEnd(){const C=DC(),c=CORE(),cr=c?c.hp/c.max:0,lf=(DR.lost||0)/Math.max(4,DR.n0||4),sc=Math.max(0,Math.min(1,1-lf*1.6-(1-cr)*.5));DR.act=0;DR.W=(DR.W||0)+1;DR.perf=sc;
+ if(!C.on){DR.t=Math.min(300,(DR.t||0)+10);return}
+ const wp=C.p/100*(.15+sc*.85)*((DR.press||0)>=2?0:1),wb=(1-sc)*.6+.15,we=.5;let r=Math.random()*(wp+wb+we),m,tot=wp+wb+we;
+ const h='Raid won: score '+Math.round(sc*100)+'% ('+(DR.lost||0)+' buildings lost, core '+Math.round(cr*100)+'%, cleared in '+Math.round(time-DR.t0)+'s). Odds: pressure '+Math.round(wp/tot*100)+'%, breather '+Math.round(wb/tot*100)+'%, escalate '+Math.round(we/tot*100)+'% → ';
+ DR.i=Math.min(1.6,DR.i+.05);
+ if(r<wp){DR.press=(DR.press||0)+1;nextWave=Math.min(nextWave,12);warned=0;dirLog(h+'PRESSURE: another raid starts in ~12s, no time to breathe');flash('The director smells blood: another raid is coming!')}
+ else if(r<wp+wb){DR.press=0;DR.t=Math.min(300,(DR.t||0)+25);DR.i=Math.min(1.6,DR.i+.06);dirLog(h+'BREATHER: +25s before the next raid, but it will be stronger (×'+DR.i.toFixed(2)+')');flash('Raid repelled. Room to breathe, but the next raid will be stronger.')}
+ else{DR.press=0;DR.t=Math.min(300,(DR.t||0)+10);dirLog(h+'ESCALATE: normal gap (+10s), enemies slightly stronger (×'+DR.i.toFixed(2)+')');flash('Raid repelled. Enemies grow stronger.')}}
+function dirDraw(){const C=DC(),L=(DR.log||[]).slice().reverse();$('dir').innerHTML='<h2>Raid Determinator</h2><p>Status: '+(C.on?'<b>active</b>':'off')+' · Intensity ×'+DR.i.toFixed(2)+' · Won '+(DR.W||0)+' · Lost '+(DR.L||0)+' · Last score '+(DR.perf==null?'—':Math.round(DR.perf*100)+'%')+' · Next raid in '+Math.max(0,Math.round(nextWave))+'s (gap bonus +'+(DR.t||0)+'s)'+(DR.act?' · <b>raid in progress</b>: '+enemies.length+' invaders, '+(DR.lost||0)+' buildings lost':'')+'</p><p style="opacity:.8">After each raid it scores you from buildings lost and core health, then chooses: <b>pressure</b> (another raid right away, likelier when you did well, never more than twice in a row), <b>breather</b> (longer gap, but the next raid is stronger) or <b>escalate</b> (normal gap, slightly stronger enemies). If you are being overrun it rolls: annihilation '+C.a+'% (only from wave 8 and only when the core is below 15%), mercy '+C.m+'%, otherwise the raiders keep fighting. Pressure weight '+C.p+'%. Change these in Settings.</p><h3>Decisions</h3>'+(L.length?L.map(x=>'<div class="ri"><small>'+x+'</small></div>').join(''):'<p>No decisions yet.</p>')+'<p><button id="dirx">Close</button></p>';$('dirx').onclick=()=>tg('dir')}
+const cnm=m=>workers.filter(w=>!w.dr&&w.mode==m).length;
+$('modes').addEventListener('input',e=>{const el=e.target;if(!el.classList.contains('ms'))return;const m=+el.dataset.m,t=+el.value;for(let k=0;k<200;k++){const c=cnm(m);if(c==t)break;const w=c<t?workers.find(w=>!w.dr&&w.mode==-1):workers.find(w=>!w.dr&&w.mode==m&&(w.st=='idle'||w.st=='work'))||workers.find(w=>!w.dr&&w.mode==m);if(!w)break;assign(w,c<t?m:-1);if(c>t){w.st='idle';w.p=[];w.n=0;w.bag=null}}});
+setInterval(()=>{const ws0=workers.filter(w=>!w.dr),id0=ws0.filter(w=>w.mode==-1).length;$('vacn').textContent=id0+' ('+(ws0.length?Math.round(id0/ws0.length*100):0)+'%)'},150);
+setInterval(()=>{const idleN=workers.filter(w=>!w.dr&&w.mode==-1).length;document.querySelectorAll('#modes .ms').forEach(el=>{if(document.activeElement===el&&el.matches(':active'))return;el.max=cnm(+el.dataset.m)+idleN;el.value=cnm(+el.dataset.m)})},150);
+/* ---- v3: logistics, stockpiler, logic clock, unit cap, recipe viewer, click menu, effects ---- */
+const BL=new Map(),PT=[];let OUTB=new Set(),MOTS=[],NP=null;
+const sumO=o=>{let s=0;for(const k in o)s+=o[k];return s},
+ unitCap=()=>10*(cnt('house')+cnt('cottage')),
+ STK=n=>[{cap:100,ty:2},{cap:400,ty:5},{cap:1000,ty:10}][(n.tier||1)-1],
+ UPC={stock:[null,{metal:10,gear:2},{metal:25,gear:6,gum:4}],clock:[null,{gear:3,metal:4},{gear:6,gum:3,metal:8}]},
+ CLH=[1.2,.6,.3],
+ motNear=n=>MOTS.some(o=>Math.hypot(o.x-n.x,o.y-n.y)<160),
+ compass=a=>['E','SE','S','SW','W','NW','N','NE'][Math.round((((a%6.2832)+6.2832)%6.2832)/.7854)%8],
+ PRC={metal:2,pearl:3,food:3,gum:5,meat:3,bone:3,gear:6,pill:6},
+ afford=c=>Object.keys(c).every(r=>(S[r]||0)>=c[r]),
+ cst=c=>Object.keys(c).map(r=>c[r]+' '+rname(r)).join(', ');
+/* logic clock */
+function clockOf(n,mods){let b=null,bd=130;for(const o of mods)if(o.type=='clock'&&!o.bp){const d=Math.hypot(o.x-n.x,o.y-n.y);if(d<bd){bd=d;b=o}}return b}
+function clockTick(n,dt){const t=n.tier||1,h=CLH[t-1];
+ if(t==3){let a=0;for(const e of enemies)if(Math.hypot(e.x-n.x,e.y-n.y)<360){a=1;break}if(!a){n.cs=0;n.ct=0;return}}
+ if((n.ct=(n.ct||0)+dt)>=h){n.ct=0;n.cs=n.cs?0:1;if(n.cs)n.pulse=(n.pulse||0)+1}}
+/* particles and hit effects */
+function spark(x,y,c,n){for(let i=0;i<(n||1)&&PT.length<500;i++){const a=Math.random()*6.283,s=40+Math.random()*90;PT.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.3+Math.random()*.25,c})}}
+function ptTick(dt){for(const p of PT){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;p.t-=dt}for(let i=PT.length-1;i>=0;i--)if(PT[i].t<=0)PT.splice(i,1)}
+function hitScan(dt){const q=Math.min(1,dt*16);
+ for(const e of enemies){if(e.ph!=null&&e.hp<e.ph-.001){e.hf=.14;if(Math.random()<q)spark(e.x,e.y,'#ffffff',2)}if(e.hf>0)e.hf-=dt;e.ph=e.hp;if(e.hp<=0)spark(e.x,e.y,EN[e.ty].col,8)}
+ for(const w of workers){if(w.ph!=null&&w.hp<w.ph-.001){w.hf=.14;if(Math.random()<q)spark(w.x,w.y,'#ff6b6b',2)}if(w.hf>0)w.hf-=dt;w.ph=w.hp}
+ for(const n of N.values()){if(n.ph!=null&&n.hp<n.ph-.001){n.hf=.12;if(Math.random()<q*.6)spark(n.x+(Math.random()-.5)*12,n.y+(Math.random()-.5)*12,'#ffb36b',1)}if(n.hf>0)n.hf-=dt;n.ph=n.hp}
+ ptTick(dt)}
+function drawFx2(){g.save();for(const p of PT){g.globalAlpha=Math.max(0,Math.min(1,p.t/.35));g.fillStyle=p.c;g.beginPath();g.arc(sx(p.x),sy(p.y),Math.max(1.2,2.2*cam.z),0,6.283);g.fill()}
+ if(DR.fa!=null&&!over){const c=CORE();if(c){g.globalAlpha=.85;g.strokeStyle='#d64545';g.fillStyle='#d64545';g.lineWidth=3;const ux=Math.cos(DR.fa),uy=Math.sin(DR.fa),x0=sx(c.x+ux*150),y0=sy(c.y+uy*150),x1=sx(c.x+ux*230),y1=sy(c.y+uy*230);
+  g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();g.beginPath();g.moveTo(x1+ux*10,y1+uy*10);g.lineTo(x1-uy*8,y1+ux*8);g.lineTo(x1+uy*8,y1-ux*8);g.fill();
+  g.font='bold 12px sans-serif';g.textAlign='center';g.fillText('RAID from the '+compass(DR.fa),x1+ux*48,y1+uy*30)}}
+ g.restore()}
+/* build animation, stockpiler and clock visuals */
+function bpDraw(n,d){const R=d.r||10,x=sx(n.x),y=sy(n.y),r=R*cam.z;
+ if(n.bp){const pg=n.pg||0;g.save();g.globalAlpha=1;g.setLineDash([4,3]);g.strokeStyle='#e8913a';g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3*cam.z,0,6.283);g.stroke();g.setLineDash([]);
+  if(pg>0){g.save();g.beginPath();g.rect(x-r,y+r-2*r*pg,2*r,2*r*pg);g.clip();g.beginPath();g.arc(x,y,r,0,6.283);g.fillStyle=KC[d.k]||'#3b82c4';g.fill();g.restore();
+   g.strokeStyle='rgba(255,211,107,.85)';g.lineWidth=1;g.beginPath();g.moveTo(x-r,y-r);g.lineTo(x+r,y+r);g.moveTo(x+r,y-r);g.lineTo(x-r,y+r);g.stroke();
+   g.fillStyle='rgba(0,0,0,.55)';g.fillRect(x-r,y+r+4,2*r,5);g.fillStyle='#ffd36b';g.fillRect(x-r,y+r+4,2*r*pg,5)}
+  g.restore();return}
+ if(n.pop>0){g.save();g.globalAlpha=Math.min(1,n.pop*2);g.strokeStyle='#ffd36b';g.lineWidth=2;g.beginPath();g.arc(x,y,r+(.5-n.pop)*60*cam.z,0,6.283);g.stroke();g.restore()}
+ if(n.hf>0){g.save();g.globalAlpha=.55;g.fillStyle='#fff';g.beginPath();g.arc(x,y,r,0,6.283);g.fill();g.restore()}
+ if(n.type=='stock'){const f=sumO(n.sp||{})/STK(n).cap;g.fillStyle='rgba(0,0,0,.45)';g.fillRect(x-r,y+r+3,2*r,4);g.fillStyle='#8cbf5c';g.fillRect(x-r,y+r+3,2*r*f,4)}
+ if(n.type=='stock'||n.type=='clock'){if(n.type=='clock'){g.save();g.beginPath();g.arc(x,y,r*.55,0,6.283);g.fillStyle=n.cs?'#58c46b':'#4a5a63';g.fill();g.restore()}g.fillStyle='#10181d';g.font='bold '+Math.max(7,r*.7)+'px sans-serif';g.fillText('T'+(n.tier||1),x,y+(n.type=='clock'?0:r*.5))}}
+/* conveyors */
+function beltTake(A){const bi=A.bi;if(bi){for(const r in bi)if(bi[r]>=1){bi[r]--;if(!bi[r])delete bi[r];return r}}
+ if(A.type=='stock'&&A.sp){const ks=Object.keys(A.sp);if(ks.length){const r=ks[(A.rr=(A.rr||0)+1)%ks.length];A.sp[r]--;if(!A.sp[r])delete A.sp[r];return r}}
+ for(const r in A.out)if(A.out[r]>=1){A.out[r]--;return r}
+ return null}
+function beltAccept(B,r){if(B.type=='core'){S[r]=(S[r]||0)+1;return 1}
+ const d=dd(B);if(d.i&&d.i[r]&&(B.buf[r]||0)<d.i[r]*2*btz(d)){B.buf[r]=(B.buf[r]||0)+1;return 1}
+ if(B.type=='stock'){const sp=B.sp=B.sp||{},t=STK(B);if(sumO(sp)<t.cap&&(r in sp||Object.keys(sp).length<t.ty)){sp[r]=(sp[r]||0)+1;return 1}return 0}
+ const bi=B.bi=B.bi||{};if(sumO(bi)<20){bi[r]=(bi[r]||0)+1;return 1}return 0}
+function beltTick(dt){OUTB=new Set();
+ for(const b of BL.values()){const A=N.get(b.a),B=N.get(b.b);if(!A||!B)continue;OUTB.add(b.a);if(A.bp||B.bp)continue;
+  const L=Math.hypot(A.x-B.x,A.y-B.y)||1,q=b.q;for(const it of q)it.p=Math.min(1,it.p+dt*70/L);
+  for(let i=1;i<q.length;i++)q[i].p=Math.min(q[i].p,q[i-1].p-14/L);
+  if(q.length&&q[0].p>=1&&beltAccept(B,q[0].r))q.shift();
+  if(!q.length||q[q.length-1].p>14/L){const r=beltTake(A);if(r)q.push({r,p:0})}}}
+function drawBelts(){g.save();g.lineCap='butt';
+ for(const b of BL.values()){const A=N.get(b.a),B=N.get(b.b);if(!A||!B)continue;const ax=sx(A.x),ay=sy(A.y),bx=sx(B.x),by=sy(B.y),L=Math.hypot(bx-ax,by-ay)||1,ux=(bx-ax)/L,uy=(by-ay)/L;
+  g.strokeStyle='#3d5560';g.lineWidth=7*cam.z;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
+  g.strokeStyle='#9bb4c0';g.lineWidth=1.6*cam.z;g.setLineDash([6*cam.z,10*cam.z]);g.lineDashOffset=-(time*40*cam.z);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);
+  const mx=(ax+bx)/2,my=(ay+by)/2,s=6*cam.z;g.fillStyle='#e8f0f4';g.beginPath();g.moveTo(mx+ux*s,my+uy*s);g.lineTo(mx-ux*s-uy*s*.8,my-uy*s+ux*s*.8);g.lineTo(mx-ux*s+uy*s*.8,my-uy*s-ux*s*.8);g.fill();
+  for(const it of b.q)rd(A.x+(B.x-A.x)*it.p,A.y+(B.y-A.y)*it.p,3.5,it.r,'#10181d')}
+ g.restore()}
+function linkAt(x,y){let bk=null,bd=10/cam.z;for(const n of N.values())for(const i of n.links){const m=N.get(i);if(!m||i<n.id)continue;const dx=m.x-n.x,dy=m.y-n.y,t=Math.max(0,Math.min(1,((x-n.x)*dx+(y-n.y)*dy)/(dx*dx+dy*dy||1))),d=Math.hypot(n.x+dx*t-x,n.y+dy*t-y);if(d<bd){bd=d;bk=fk(n.id,i)}}return bk}
+function beltClick(x,y){const k=linkAt(x,y);if(!k)return flash('Click a road to lay a conveyor on it');const ids=k.split('-').map(Number),A=N.get(ids[0]),B=N.get(ids[1]),cur=BL.get(k);
+ if(cur){const t=cur.a;cur.a=cur.b;cur.b=t;cur.q=[];return flash('Conveyor reversed')}
+ if((S.metal||0)<1)return flash('Need 1 metal');S.metal--;const f=Math.hypot(A.x-x,A.y-y)<=Math.hypot(B.x-x,B.y-y)?A:B,t=f===A?B:A;BL.set(k,{a:f.id,b:t.id,q:[]});flash('Conveyor: '+M[f.type].n+' to '+M[t.type].n+' (click it again to reverse)')}
+document.querySelector('.bar').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.t=='belt'&&tool=='belt')flash('Click a road to lay a conveyor on it. Items flow from the nearer end to the far end')});
+/* click menu */
+document.body.insertAdjacentHTML('beforeend','<div id="np" style="display:none;position:fixed;z-index:25;width:270px;max-height:72vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--sh);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)"></div>');
+const npEl=$('np'),npOpen=()=>npEl.style.display=='block',
+ rowH=(r,have,need,ex)=>`<div class="ri"><span>${ri(r)}${rname(r)}</span><span style="margin-left:auto;color:${have>=need?'#58c46b':'#d64545'}">${have}/${need}${have<need?' · missing '+(need-have):''}${ex||''}</span></div>`,
+ btn=(a,l,dis)=>`<button data-a="${a}" class="${dis?'no':''}" style="margin:3px 3px 0 0">${l}</button>`,
+ XB='<span data-a="x" style="float:right;cursor:pointer" title="Close">✕</span>';
+const refund=n=>{const o={};if(!n.bp&&M[n.type].c)for(const r in M[n.type].c){const q=Math.floor(M[n.type].c[r]/2);if(q)o[r]=q}return o};
+function closeNP(){NP=null;npEl.style.display='none'}
+function placeNP(cx,cy){npEl.style.display='block';npEl.style.left=Math.max(6,Math.min(innerWidth-286,cx+14))+'px';npEl.style.top=Math.max(6,Math.min(innerHeight-npEl.offsetHeight-6,cy+10))+'px'}
+function openNP(id,cx,cy){NP={k:'n',id};npDraw();placeNP(cx,cy)}
+function recUI(n){const a=RC[n.type];if(!a||!a.length)return'';const mn=motNear(n),opt=sel=>'<option value="0"'+(sel===0?' selected':'')+'>Default</option>'+a.map((r,i)=>'<option value="'+(i+1)+'"'+(sel===i+1?' selected':'')+'>'+r.name+'</option>').join('');
+ return '<p style="margin:8px 0 2px"><b>Recipe</b></p><select id="npr" style="width:100%">'+opt(n.rc||0)+'</select><p style="margin:6px 0 2px"><b>Second recipe</b> <small>'+(mn?'(Motivator in range: both run together)':'(needs a Motivator within 160)')+'</small></p><select id="npr2" style="width:100%"'+(mn?'':' disabled')+'><option value="">None</option>'+opt(n.rc2==null?-1:n.rc2)+'</select>'}
+function market(){return '<p style="margin:8px 0 2px"><b>Exchange</b> <small>coin '+Math.floor(S.coin||0)+'</small></p><div style="display:grid;grid-template-columns:1fr auto auto;gap:3px;align-items:center">'+Object.keys(PRC).map(r=>`<span>${ri(r)}${rname(r)} <small>${Math.floor(S[r]||0)}</small></span>${btn('buy:'+r,'Buy 5 · '+PRC[r]*5+'c',(S.coin||0)<PRC[r]*5)}${btn('sell:'+r,'Sell 5 · '+Math.floor(PRC[r]*2.5)+'c',(S[r]||0)<5)}`).join('')+'</div>'}
+function npNode(n){const d=M[n.type],e=dd(n),mods=[...N.values()];
+ let h=`<b>${d.n}</b> <small>HP ${Math.round(n.hp)}/${n.max}</small>${XB}`;
+ if(n.bp){h+=`<p>Blueprint${n.pg>0?' · building '+Math.round(n.pg*100)+'%':''}. A Construction unit pays this when work starts:</p>`+Object.keys(d.c).map(r=>rowH(r,Math.floor(S[r]||0),d.c[r])).join('')}
+ else{
+  if(d.pw&&!n.pwd)h+='<p style="color:#d64545;margin:4px 0">No power</p>';
+  if(man(d)&&!clockOf(n,mods)&&!workers.some(o=>o.st=='work'&&o.tgt==n.id))h+='<p style="color:#e8a13a;margin:4px 0">No operator: assign Production units</p>';
+  if(d.fx=='house')h+=`<p style="margin:4px 0">Units ${workers.length}/${unitCap()} (10 per house)${workers.length>=unitCap()?' <b style="color:#e8a13a">cap reached: build another house</b>':''}</p>`;
+  if(e.i&&Object.keys(e.i).length){const bt=btz(e);h+='<p style="margin:6px 0 2px">Needed per cycle (in module / needed, core stock):</p>'+Object.keys(e.i).map(r=>rowH(r,Math.floor(n.buf[r]||0),e.i[r]*bt,' · core '+Math.floor(S[r]||0))).join('')}
+  if(e.t>0&&!['turret','laser'].includes(d.fx)&&(Object.keys(e.i||{}).length||Object.keys(e.o||{}).length)){const bt=btz(e);h+=`<p style="margin:4px 0">Cycle ${Math.min(100,Math.round(n.t/(e.t*bt)*100))}%`+(e.o&&Object.keys(e.o).length?' → makes '+Object.keys(e.o).map(r=>e.o[r]*bt+' '+rname(r)).join(', '):'')+'</p>'}
+  if(d.fx=='turret'||d.fx=='laser'){const ck=clockOf(n,mods);h+=`<p style="margin:4px 0">${ck?'Controlled by a Logic Clock (now '+(ck.cs?'ON':'OFF')+')':'Needs an operator, or a Logic Clock within 130'}</p>`}
+  const out=Object.keys(n.out).filter(r=>n.out[r]>=1).map(r=>Math.floor(n.out[r])+' '+rname(r)).join(', ');if(out)h+=`<p style="margin:4px 0">Output waiting: ${out}</p>`;
+  const bi=Object.keys(n.bi||{}).map(r=>n.bi[r]+' '+rname(r)).join(', ');if(bi)h+=`<p style="margin:4px 0">On this platform (belt): ${bi}</p>`;
+  if(n.type=='stock'){const t=STK(n),sp=n.sp||{};h+=`<p style="margin:6px 0 2px">Tier ${n.tier||1}: ${sumO(sp)}/${t.cap} items · ${Object.keys(sp).length}/${t.ty} item types</p>`+(Object.keys(sp).length?Object.keys(sp).map(r=>`<div class="ri"><span>${ri(r)}${rname(r)}</span><span style="margin-left:auto">${sp[r]}</span></div>`).join(''):'<small>Empty. Feed it with a conveyor; a conveyor leaving it takes items out.</small>')}
+  if(n.type=='clock'){const t=n.tier||1;h+=`<p style="margin:6px 0">Tier ${t}: switches every ${CLH[t-1]}s${t==3?', alert system: only cycles while enemies are within 360':''}. Now ${n.cs?'ON':'OFF'}. Turrets and lasers within 130 follow it.</p>`}
+  if(UPC[n.type]){const t=n.tier||1,c=UPC[n.type][t];h+=c?btn('up','Upgrade to tier '+(t+1)+' ('+cst(c)+')',!afford(c)):'<small>Max tier</small>'}
+  h+=recUI(n);if(n.type=='core')h+=market()}
+ return h+(n.type!='core'?'<div style="margin-top:8px">'+btn('del','Delete'+(n.bp||!Object.keys(refund(n)).length?'':' (refund '+cst(refund(n))+')'))+'</div>':'')}
+const lnk=()=>{const ids=NP.key.split('-').map(Number),A=N.get(ids[0]),B=N.get(ids[1]);return A&&B&&A.links.includes(B.id)?[A,B]:null};
+function npLink(){const l=lnk();if(!l)return'';const A=l[0],B=l[1],k=NP.key,bl=BL.get(k);
+ let h=`<b>Road</b> <small>${M[A.type].n} ↔ ${M[B.type].n} · ${Math.round(Math.hypot(A.x-B.x,A.y-B.y))}px${fast.has(k)?' · fast road':''}</small>${XB}`;
+ if(bl){const f=N.get(bl.a),t=N.get(bl.b);h+=`<p>Conveyor: ${M[f.type].n} → ${M[t.type].n} · ${bl.q.length} items on the belt</p>`+btn('rev','Reverse direction')+btn('unbelt','Remove conveyor')}
+ else h+='<p>Plain road.</p>'+btn('mkAB','Conveyor '+M[A.type].n+' → '+M[B.type].n,(S.metal||0)<1)+btn('mkBA','Conveyor '+M[B.type].n+' → '+M[A.type].n,(S.metal||0)<1);
+ return h+'<div style="margin-top:8px">'+btn('dl','Delete road')+'</div>'}
+function linkAct(a){const l=lnk();if(!l)return closeNP();const A=l[0],B=l[1],k=NP.key;
+ if(a=='mkAB'||a=='mkBA'){if(S.metal<1)return;S.metal--;const f=a=='mkAB'?A:B,t=a=='mkAB'?B:A;BL.set(k,{a:f.id,b:t.id,q:[]})}
+ else if(a=='rev'){const b=BL.get(k);if(b){const t=b.a;b.a=b.b;b.b=t;b.q=[]}}else if(a=='unbelt')BL.delete(k);
+ else if(a=='dl'){A.links=A.links.filter(i=>i!=B.id);B.links=B.links.filter(i=>i!=A.id);BL.delete(k);fast.delete(k);closeNP()}}
+function linkClick(x,y,e){const k=linkAt(x,y);if(!k)return false;NP={k:'l',key:k};npDraw();placeNP(e.clientX,e.clientY);return true}
+function baseAt(x,y){const cx=Math.floor(x/CS),cy=Math.floor(y/CS);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const b=fbase(cx+i,cy+j);if(b&&Math.hypot(b.x-x,b.y-y)<36)return b}return null}
+function baseClick(x,y,e){const b=baseAt(x,y);if(!b)return false;NP={k:'f',key:b.key};npDraw();placeNP(e.clientX,e.clientY);return true}
+function npBase(){const b=FB.get(NP.key);if(!b)return'';const F=b.f,c=S.coin||0,st=b.st==1?'trading, linked':b.st==3?'hostile, raiding':'no contact yet',pz=(b.pz||0)>time;
+ let h=`<b>${F.n}</b> <small>${TRN[F.tr]} · ${st}</small>${XB}<p style="margin:4px 0">Trades ${ri(F.g)}${rname(F.g)}.${F.tr=='f'&&b.st==1?' Euphoria '+Math.round(b.eu||0)+'%.':''}${pz?' Raids paused '+Math.ceil(b.pz-time)+'s.':''}</p>`;
+ if(F.tr=='h')h+=btn('trib','Pay tribute 20 coin: no raids for 5 min',c<20||pz)+btn('peace','Sue for peace 60 coin: becomes neutral',c<60);
+ else if(F.tr=='n')h+=btn('bf','Befriend 30 coin: becomes friendly',c<30);
+ else h+=btn('gift','Send gift 10 coin: +25 euphoria',c<10||b.st!=1);
+ return h+`<p style="margin:6px 0 0"><small>Coin ${Math.floor(c)}. Coin comes from the Minting Factory or the Exchange at your core.</small></p>`}
+function baseAct(a){const b=FB.get(NP.key);if(!b)return;const pay=n=>{if((S.coin||0)<n)return 0;S.coin-=n;return 1};
+ if(a=='trib'&&pay(20)){b.pz=time+300;flash('Tribute paid: '+b.f.n+' will leave you alone for 5 minutes')}
+ else if(a=='peace'&&pay(60)){b.f=Object.assign({},b.f,{tr:'n'});b.st=0;b.pz=0;flash('Peace with '+b.f.n+': they are now neutral')}
+ else if(a=='bf'&&pay(30)){b.f=Object.assign({},b.f,{tr:'f'});flash(b.f.n+' are now friendly')}
+ else if(a=='gift'&&pay(10)){b.eu=Math.min(100,(b.eu||0)+25);flash('Gift delivered to '+b.f.n)}}
+function npDraw(){if(!NP)return;let h='';if(NP.k=='n'){const n=N.get(NP.id);if(!n)return closeNP();h=npNode(n)}else if(NP.k=='l'){h=npLink()}else if(NP.k=='f'){h=npBase()}if(!h)return closeNP();npEl.innerHTML=h}
+npEl.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.classList.contains('no')||!NP)return;const sp=b.dataset.a.split(':'),a=sp[0],p=sp[1];
+ if(a=='x')return closeNP();
+ if(NP.k=='n'){const n=N.get(NP.id);if(!n)return;
+  if(a=='del'&&n.type!='core'){const t=n.type,rf=refund(n);for(const r in rf)S[r]=(S[r]||0)+rf[r];if(n.sp)for(const r in n.sp)S[r]=(S[r]||0)+n.sp[r];n.bp=1;if(t=='bombw')n.type='road';spark(n.x,n.y,'#ff9a5a',10);kill(n);flash('Deleted '+M[t].n+(Object.keys(rf).length?' (refunded '+cst(rf)+')':''));return closeNP()}
+  if(a=='up'){const c=UPC[n.type][n.tier||1];if(c&&afford(c)){for(const r in c)S[r]-=c[r];n.tier=(n.tier||1)+1;flash(M[n.type].n+' upgraded to tier '+n.tier)}}
+  if(a=='buy'&&(S.coin||0)>=PRC[p]*5){S.coin-=PRC[p]*5;S[p]=(S[p]||0)+5}
+  if(a=='sell'&&(S[p]||0)>=5){S[p]-=5;S.coin=(S.coin||0)+Math.floor(PRC[p]*2.5)}}
+ else if(NP.k=='l')linkAct(a);else if(NP.k=='f')baseAct(a);
+ npDraw()});
+npEl.addEventListener('change',e=>{const n=NP&&NP.k=='n'&&N.get(NP.id);if(!n)return;
+ if(e.target.id=='npr'){n.rc=+e.target.value;if(n.rc2===n.rc)n.rc2=null}
+ else if(e.target.id=='npr2'){n.rc2=e.target.value===''?null:+e.target.value;if(n.rc2===(n.rc||0))n.rc2=null}else return;
+ n.buf={};n.t=0;flash(M[n.type].n+' recipe updated');npDraw()});
+setInterval(()=>{if(npOpen()&&!(npEl.contains(document.activeElement)&&document.activeElement.tagName=='SELECT'))npDraw()},250);
+
+reset();over=true;requestAnimationFrame(loop);
+</script></body></html>
